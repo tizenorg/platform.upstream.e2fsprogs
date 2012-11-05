@@ -47,7 +47,6 @@ e2fsck/tst_crc32
 e2fsck/tst_problem
 e2fsck/tst_refcount
 e2fsck/tst_region
-e2fsprogs.spec
 lib/blkid/blkid.h
 lib/blkid/blkid.pc
 lib/blkid/blkid_types.h
