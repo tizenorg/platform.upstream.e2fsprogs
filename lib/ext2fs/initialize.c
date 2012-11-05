@@ -98,8 +98,10 @@ errcode_t ext2fs_initialize(const char *name, int flags,
 	int		csum_flag;
 	int		bigalloc_flag;
 	int		io_flags;
+	unsigned	reserved_inos;
 	char		*buf = 0;
 	char		c;
+	double		reserved_ratio;
 
 	if (!param || !ext2fs_blocks_count(param))
 		return EXT2_ET_INVALID_ARGUMENT;
@@ -390,6 +392,14 @@ ipg_retry:
 	if (rem && (rem < overhead+50)) {
 		ext2fs_blocks_count_set(super, ext2fs_blocks_count(super) -
 					rem);
+		/*
+		 * If blocks count is changed, we need to recalculate
+		 * reserved blocks count not to exceed 50%.
+		 */
+		reserved_ratio = 100.0 * ext2fs_r_blocks_count(param) /
+			ext2fs_blocks_count(param);
+		ext2fs_r_blocks_count_set(super, reserved_ratio *
+			ext2fs_blocks_count(super) / 100.0);
 
 		goto retry;
 	}
@@ -439,6 +449,7 @@ ipg_retry:
 	free_blocks = 0;
 	csum_flag = EXT2_HAS_RO_COMPAT_FEATURE(fs->super,
 					       EXT4_FEATURE_RO_COMPAT_GDT_CSUM);
+	reserved_inos = super->s_first_ino;
 	for (i = 0; i < fs->group_desc_count; i++) {
 		/*
 		 * Don't set the BLOCK_UNINIT group for the last group
@@ -450,8 +461,15 @@ ipg_retry:
 						    EXT2_BG_BLOCK_UNINIT);
 			ext2fs_bg_flags_set(fs, i, EXT2_BG_INODE_UNINIT);
 			numblocks = super->s_inodes_per_group;
-			if (i == 0)
-				numblocks -= super->s_first_ino;
+			if (reserved_inos) {
+				if (numblocks > reserved_inos) {
+					numblocks -= reserved_inos;
+					reserved_inos = 0;
+				} else {
+					reserved_inos -= numblocks;
+					numblocks = 0;
+				}
+			}
 			ext2fs_bg_itable_unused_set(fs, i, numblocks);
 		}
 		numblocks = ext2fs_reserve_super_and_bgd(fs, i, fs->block_map);

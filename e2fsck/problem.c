@@ -1694,7 +1694,7 @@ static struct e2fsck_problem problem_table[] = {
 	/* Update quota information if it is inconsistent */
 	{ PR_6_UPDATE_QUOTAS,
 	  N_("Update quota info for quota type %N"),
-	  PROMPT_NULL, PR_PREEN_OK | PR_NO_OK },
+	  PROMPT_NULL, PR_PREEN_OK },
 
 	{ 0 }
 };
@@ -1789,11 +1789,11 @@ void clear_problem_context(struct problem_context *ctx)
 static void reconfigure_bool(e2fsck_t ctx, struct e2fsck_problem *ptr,
 			     const char *key, int mask, const char *name)
 {
-	int	bool;
+	int	val;
 
-	bool = (ptr->flags & mask);
-	profile_get_boolean(ctx->profile, "problems", key, name, bool, &bool);
-	if (bool)
+	val = (ptr->flags & mask);
+	profile_get_boolean(ctx->profile, "problems", key, name, val, &val);
+	if (val)
 		ptr->flags |= mask;
 	else
 		ptr->flags &= ~mask;
