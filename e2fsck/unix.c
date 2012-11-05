@@ -102,8 +102,9 @@ static void show_stats(e2fsck_t	ctx)
 	blk64_t blocks, blocks_used;
 	unsigned int dir_links;
 	unsigned int num_files, num_links;
+	__u32 *mask, m;
 	int frag_percent_file, frag_percent_dir, frag_percent_total;
-	int i, j;
+	int i, j, printed = 0;
 
 	dir_links = 2 * ctx->fs_directory_count - 1;
 	num_files = ctx->fs_total_count - dir_links;
@@ -134,21 +135,40 @@ static void show_stats(e2fsck_t	ctx)
 			blocks_used, blocks);
 		return;
 	}
-	log_out(ctx, P_("\n%8u inode used (%2.2f%%)\n",
-			"\n%8u inodes used (%2.2f%%)\n",
+	profile_get_boolean(ctx->profile, "options", "report_features", 0, 0,
+			    &i);
+	if (verbose && i) {
+		log_out(ctx, "\nFilesystem features:");
+		mask = &ctx->fs->super->s_feature_compat;
+		for (i = 0; i < 3; i++, mask++) {
+			for (j = 0, m = 1; j < 32; j++, m <<= 1) {
+				if (*mask & m) {
+					log_out(ctx, " %s",
+						e2p_feature2string(i, m));
+					printed++;
+				}
+			}
+		}
+		if (printed == 0)
+			log_out(ctx, " (none)");
+		log_out(ctx, "\n");
+	}
+
+	log_out(ctx, P_("\n%12u inode used (%2.2f%%, out of %u)\n",
+			"\n%12u inodes used (%2.2f%%, out of %u)\n",
 			inodes_used), inodes_used,
-		100.0 * inodes_used / inodes);
-	log_out(ctx, P_("%8u non-contiguous file (%0d.%d%%)\n",
-			"%8u non-contiguous files (%0d.%d%%)\n",
+		100.0 * inodes_used / inodes, inodes);
+	log_out(ctx, P_("%12u non-contiguous file (%0d.%d%%)\n",
+			"%12u non-contiguous files (%0d.%d%%)\n",
 			ctx->fs_fragmented),
 		ctx->fs_fragmented, frag_percent_file / 10,
 		frag_percent_file % 10);
-	log_out(ctx, P_("%8u non-contiguous directory (%0d.%d%%)\n",
-			"%8u non-contiguous directories (%0d.%d%%)\n",
+	log_out(ctx, P_("%12u non-contiguous directory (%0d.%d%%)\n",
+			"%12u non-contiguous directories (%0d.%d%%)\n",
 			ctx->fs_fragmented_dir),
 		ctx->fs_fragmented_dir, frag_percent_dir / 10,
 		frag_percent_dir % 10);
-	log_out(ctx, _("         # of inodes with ind/dind/tind blocks: "
+	log_out(ctx, _("             # of inodes with ind/dind/tind blocks: "
 		       "%u/%u/%u\n"),
 		ctx->fs_ind_count, ctx->fs_dind_count, ctx->fs_tind_count);
 
@@ -156,7 +176,7 @@ static void show_stats(e2fsck_t	ctx)
 		if (ctx->extent_depth_count[j])
 			break;
 	if (++j) {
-		log_out(ctx, _("         Extent depth histogram: "));
+		log_out(ctx, _("             Extent depth histogram: "));
 		for (i=0; i < j; i++) {
 			if (i)
 				fputc('/', stdout);
@@ -165,37 +185,39 @@ static void show_stats(e2fsck_t	ctx)
 		log_out(ctx, "\n");
 	}
 
-	log_out(ctx, P_("%8llu block used (%2.2f%%)\n",
-			"%8llu blocks used (%2.2f%%)\n",
-		   blocks_used), blocks_used, 100.0 * blocks_used / blocks);
-	log_out(ctx, P_("%8u bad block\n", "%8u bad blocks\n",
+	log_out(ctx, P_("%12llu block used (%2.2f%%, out of %llu)\n",
+			"%12llu blocks used (%2.2f%%, out of %llu)\n",
+		   blocks_used),
+		blocks_used, 100.0 * blocks_used / blocks, blocks);
+	log_out(ctx, P_("%12u bad block\n", "%12u bad blocks\n",
 			ctx->fs_badblocks_count), ctx->fs_badblocks_count);
-	log_out(ctx, P_("%8u large file\n", "%8u large files\n",
+	log_out(ctx, P_("%12u large file\n", "%12u large files\n",
 			ctx->large_files), ctx->large_files);
-	log_out(ctx, P_("\n%8u regular file\n", "\n%8u regular files\n",
+	log_out(ctx, P_("\n%12u regular file\n", "\n%12u regular files\n",
 			ctx->fs_regular_count), ctx->fs_regular_count);
-	log_out(ctx, P_("%8u directory\n", "%8u directories\n",
+	log_out(ctx, P_("%12u directory\n", "%12u directories\n",
 			ctx->fs_directory_count), ctx->fs_directory_count);
-	log_out(ctx, P_("%8u character device file\n",
-			"%8u character device files\n", ctx->fs_chardev_count),
+	log_out(ctx, P_("%12u character device file\n",
+			"%12u character device files\n", ctx->fs_chardev_count),
 		ctx->fs_chardev_count);
-	log_out(ctx, P_("%8u block device file\n", "%8u block device files\n",
+	log_out(ctx, P_("%12u block device file\n", "%12u block device files\n",
 			ctx->fs_blockdev_count), ctx->fs_blockdev_count);
-	log_out(ctx, P_("%8u fifo\n", "%8u fifos\n", ctx->fs_fifo_count),
+	log_out(ctx, P_("%12u fifo\n", "%12u fifos\n", ctx->fs_fifo_count),
 		ctx->fs_fifo_count);
-	log_out(ctx, P_("%8u link\n", "%8u links\n",
+	log_out(ctx, P_("%12u link\n", "%12u links\n",
 			ctx->fs_links_count - dir_links),
 		ctx->fs_links_count - dir_links);
-	log_out(ctx, P_("%8u symbolic link", "%8u symbolic links",
+	log_out(ctx, P_("%12u symbolic link", "%12u symbolic links",
 			ctx->fs_symlinks_count), ctx->fs_symlinks_count);
 	log_out(ctx, P_(" (%u fast symbolic link)\n",
 			" (%u fast symbolic links)\n",
 			ctx->fs_fast_symlinks_count),
 		ctx->fs_fast_symlinks_count);
-	log_out(ctx, P_("%8u socket\n", "%8u sockets\n", ctx->fs_sockets_count),
+	log_out(ctx, P_("%12u socket\n", "%12u sockets\n",
+			ctx->fs_sockets_count),
 		ctx->fs_sockets_count);
-	log_out(ctx, "--------\n");
-	log_out(ctx, P_("%8u file\n", "%8u files\n",
+	log_out(ctx, "------------\n");
+	log_out(ctx, P_("%12u file\n", "%12u files\n",
 			ctx->fs_total_count - dir_links),
 		ctx->fs_total_count - dir_links);
 }
@@ -225,7 +247,9 @@ static void check_mount(e2fsck_t ctx)
 	     !(ctx->options & E2F_OPT_WRITECHECK)))
 		return;
 
-	if ((ctx->options & E2F_OPT_READONLY) &&
+	if (((ctx->options & E2F_OPT_READONLY) ||
+	     ((ctx->options & E2F_OPT_FORCE) &&
+	      (ctx->mount_flags & EXT2_MF_READONLY))) &&
 	    !(ctx->options & E2F_OPT_WRITECHECK)) {
 		log_out(ctx, _("Warning!  %s is %s.\n"),
 			ctx->filesystem_name,
@@ -918,6 +942,15 @@ static errcode_t PRS(int argc, char *argv[], e2fsck_t *ret_ctx)
 	profile_set_syntax_err_cb(syntax_err_report);
 	profile_init(config_fn, &ctx->profile);
 
+	profile_get_boolean(ctx->profile, "options", "report_time", 0, 0,
+			    &c);
+	if (c)
+		ctx->options |= E2F_OPT_TIME | E2F_OPT_TIME2;
+	profile_get_boolean(ctx->profile, "options", "report_verbose", 0, 0,
+			    &c);
+	if (c)
+		verbose = 1;
+
 	/* Turn off discard in read-only mode */
 	if ((ctx->options & E2F_OPT_NO) &&
 	    (ctx->options & E2F_OPT_DISCARD))
@@ -1226,6 +1259,9 @@ restart:
 		if (!(ctx->mount_flags & EXT2_MF_ISROOT &&
 		      ctx->mount_flags & EXT2_MF_READONLY))
 			flags |= EXT2_FLAG_EXCLUSIVE;
+		if ((ctx->mount_flags & EXT2_MF_READONLY) &&
+		    (ctx->options & E2F_OPT_FORCE))
+			flags &= ~EXT2_FLAG_EXCLUSIVE;
 	}
 
 	retval = try_open_fs(ctx, flags, io_ptr, &fs);
@@ -1424,10 +1460,6 @@ failure:
 		fprintf(ctx->logf, "Filesystem UUID: %s\n",
 			e2p_uuid2str(sb->s_uuid));
 
-	if ((ctx->mount_flags & EXT2_MF_MOUNTED) &&
-	    !(sb->s_feature_incompat & EXT3_FEATURE_INCOMPAT_RECOVER))
-		goto skip_journal;
-
 	/*
 	 * Make sure the ext3 superblock fields are consistent.
 	 */
@@ -1475,7 +1507,6 @@ failure:
 		}
 	}
 
-skip_journal:
 	/*
 	 * Check for compatibility with the feature sets.  We need to
 	 * be more stringent than ext2fs_open().
