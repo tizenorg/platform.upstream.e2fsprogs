@@ -1,0 +1,190 @@
+Name:           e2fsprogs
+BuildRequires:  autoconf
+BuildRequires:  libblkid-devel
+BuildRequires:  libuuid-devel
+BuildRequires:  pkg-config
+#BuildRequires:  -libmount1, -libuuid1, -libblkid1
+Version:        1.42.4
+Release:        0
+Summary:        Utilities for the Second Extended File System
+License:        GPL-2.0
+Group:          System/Filesystems
+Url:            http://e2fsprogs.sourceforge.net
+Requires:       libcom_err >= %{version}
+Requires:       libext2fs >= %{version}
+Source:         http://downloads.sourceforge.net/project/e2fsprogs/e2fsprogs/v%{version}/e2fsprogs-%{version}.tar.xz
+Source1:        baselibs.conf
+Source2:        e2fsck.conf
+
+%description
+Utilities needed to create and maintain ext2 and ext3 file systems
+under Linux. Included in this package are: chattr, lsattr, mke2fs,
+mklost+found, tune2fs, e2fsck, resize2fs, and badblocks.
+
+%package devel
+Summary:        Dummy development package
+License:        LGPL-2.0
+Group:          Development/Libraries/C and C++
+Requires:       libblkid-devel
+Requires:       libext2fs-devel = %version
+Requires:       libuuid-devel
+
+%description devel
+Dummy development package for backwards compatibility.
+
+%package -n libext2fs
+Summary:        Ext2fs library
+License:        LGPL-2.0
+Group:          System/Filesystems
+
+%description -n libext2fs
+The basic Ext2fs shared library.
+
+%package -n libext2fs-devel
+Summary:        Development files for libext2fs
+License:        LGPL-2.0
+Group:          Development/Libraries/C and C++
+Requires:       libcom_err-devel
+Requires:       libext2fs = %version
+
+%description -n libext2fs-devel
+Development files for libext2fs.
+
+%package -n libcom_err
+Summary:        E2fsprogs error reporting library
+License:        MIT
+Group:          System/Filesystems
+
+%description -n libcom_err
+com_err is an error message display library.
+
+%package -n libcom_err-devel
+Summary:        Development files for libcom_err
+License:        MIT
+Group:          Development/Libraries/C and C++
+Requires:       glibc-devel
+Requires:       libcom_err = %version
+
+%description -n libcom_err-devel
+Development files for the com_err error message display library.
+
+%prep
+%setup -q
+
+%build
+#autoreconf --force --install
+%configure \
+  --disable-evms \
+  --with-root-prefix=''   \
+  --enable-elf-shlibs \
+  --disable-libblkid \
+  --disable-libuuid \
+  --disable-uuidd \
+  --disable-nls \
+  --disable-fsck \
+  CFLAGS="$RPM_OPT_FLAGS"
+make %{?_smp_mflags} V=1
+
+%install
+make install install-libs DESTDIR=$RPM_BUILD_ROOT ELF_INSTALL_DIR=/%{_libdir}
+
+# Let boot continue even if system clock is wrong
+install -p -m 644 %{SOURCE2} %{buildroot}/etc/e2fsck.conf
+
+
+rm $RPM_BUILD_ROOT%{_libdir}/e2initrd_helper
+rm -f $RPM_BUILD_ROOT/%{_sbindir}/mkfs.ext4dev
+rm -f $RPM_BUILD_ROOT/%{_sbindir}/fsck.ext4dev
+rm -f $RPM_BUILD_ROOT/usr/share/man/man8/mkfs.ext4dev.8*
+rm -f $RPM_BUILD_ROOT/usr/share/man/man8/fsck.ext4dev.8*
+rm -v %{buildroot}%{_includedir}/quota/mkquota.h
+rm -v %{buildroot}%{_libdir}/pkgconfig/quota.pc
+
+# Need libext2fs.a for silo
+find "%buildroot/%_libdir" -type f -name "*.a" \
+	-print -delete
+%post
+/sbin/ldconfig
+
+%postun
+/sbin/ldconfig
+
+%post -n libext2fs -p /sbin/ldconfig
+
+%postun -n libext2fs -p /sbin/ldconfig
+
+%post -n libcom_err -p /sbin/ldconfig
+
+%postun -n libcom_err -p /sbin/ldconfig
+
+%docs_package
+
+%files devel
+%doc README
+
+%files 
+%defattr(-, root, root)
+%doc RELEASE-NOTES README
+%config /etc/e2fsck.conf
+%config /etc/mke2fs.conf
+%{_sbindir}/badblocks
+%{_sbindir}/debugfs
+%{_sbindir}/dumpe2fs
+%{_sbindir}/e2undo
+%{_sbindir}/e2fsck
+%{_sbindir}/e2label
+%{_sbindir}/fsck.ext2
+%{_sbindir}/fsck.ext3
+%{_sbindir}/fsck.ext4
+%{_sbindir}/mke2fs
+%{_sbindir}/mkfs.ext2
+%{_sbindir}/mkfs.ext3
+%{_sbindir}/mkfs.ext4
+%{_sbindir}/resize2fs
+%{_sbindir}/tune2fs
+%{_sbindir}/e2image
+%{_sbindir}/logsave 
+%{_bindir}/chattr
+%{_bindir}/lsattr
+%{_sbindir}/mklost+found
+%{_sbindir}/filefrag
+%{_sbindir}/e2freefrag
+%{_sbindir}/e4defrag
+
+%files -n libext2fs
+%defattr(-, root, root)
+%{_libdir}/libext2fs.so.*
+%{_libdir}/libe2p.so.*
+
+%files -n libext2fs-devel
+%defattr(-, root, root)
+%{_libdir}/libext2fs.so
+%{_libdir}/libe2p.so
+/usr/include/ext2fs
+/usr/include/e2p
+%_libdir/pkgconfig/e2p.pc
+%_libdir/pkgconfig/ext2fs.pc
+
+%files -n libcom_err
+%defattr(-, root, root)
+%{_libdir}/libcom_err.so.*
+%{_libdir}/libss.so.*
+
+%files -n libcom_err-devel
+%defattr(-, root, root)
+%_bindir/compile_et
+%_bindir/mk_cmds
+%{_libdir}/libcom_err.so
+%{_libdir}/libss.so
+%_libdir/pkgconfig/com_err.pc
+%_libdir/pkgconfig/ss.pc
+%_includedir/com_err.h
+%_includedir/et
+%_includedir/ss
+%_datadir/et
+%_datadir/ss
+%{_mandir}/man1/compile_et.1.gz
+%{_mandir}/man1/mk_cmds.1.gz
+%{_mandir}/man3/com_err.3.gz
+
+%changelog
