@@ -3,8 +3,7 @@ BuildRequires:  autoconf
 BuildRequires:  libblkid-devel
 BuildRequires:  libuuid-devel
 BuildRequires:  pkg-config
-#BuildRequires:  -libmount1, -libuuid1, -libblkid1
-Version:        1.42.4
+Version:        1.42.6
 Release:        0
 Summary:        Utilities for the Second Extended File System
 License:        GPL-2.0
@@ -72,7 +71,6 @@ Development files for the com_err error message display library.
 %setup -q
 
 %build
-#autoreconf --force --install
 %configure \
   --disable-evms \
   --with-root-prefix=''   \
@@ -100,14 +98,9 @@ rm -f $RPM_BUILD_ROOT/usr/share/man/man8/fsck.ext4dev.8*
 rm -v %{buildroot}%{_includedir}/quota/mkquota.h
 rm -v %{buildroot}%{_libdir}/pkgconfig/quota.pc
 
-# Need libext2fs.a for silo
-find "%buildroot/%_libdir" -type f -name "*.a" \
-	-print -delete
-%post
-/sbin/ldconfig
+%post -p /sbin/ldconfig
 
-%postun
-/sbin/ldconfig
+%postun -p /sbin/ldconfig
 
 %post -n libext2fs -p /sbin/ldconfig
 
@@ -183,8 +176,5 @@ find "%buildroot/%_libdir" -type f -name "*.a" \
 %_includedir/ss
 %_datadir/et
 %_datadir/ss
-%{_mandir}/man1/compile_et.1.gz
-%{_mandir}/man1/mk_cmds.1.gz
-%{_mandir}/man3/com_err.3.gz
 
 %changelog
