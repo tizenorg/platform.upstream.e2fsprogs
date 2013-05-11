@@ -118,6 +118,7 @@ rm -v %{buildroot}%{_libdir}/pkgconfig/quota.pc
 
 %files 
 %defattr(-, root, root)
+%license COPYING
 %doc RELEASE-NOTES README
 %config /etc/e2fsck.conf
 %config /etc/mke2fs.conf
