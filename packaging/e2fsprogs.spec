@@ -14,6 +14,7 @@ Requires:       libext2fs >= %{version}
 Source:         http://downloads.sourceforge.net/project/e2fsprogs/e2fsprogs/v%{version}/e2fsprogs-%{version}.tar.xz
 Source1:        baselibs.conf
 Source2:        e2fsck.conf
+Source1001: 	e2fsprogs.manifest
 
 %description
 Utilities needed to create and maintain ext2 and ext3 file systems
@@ -69,6 +70,7 @@ Development files for the com_err error message display library.
 
 %prep
 %setup -q
+cp %{SOURCE1001} .
 
 %build
 %configure \
@@ -114,9 +116,11 @@ rm -v %{buildroot}%{_libdir}/pkgconfig/quota.pc
 %docs_package
 
 %files devel
+%manifest %{name}.manifest
 %doc README
 
 %files 
+%manifest %{name}.manifest
 %defattr(-, root, root)
 %license COPYING
 %doc RELEASE-NOTES README
@@ -147,11 +151,13 @@ rm -v %{buildroot}%{_libdir}/pkgconfig/quota.pc
 %{_sbindir}/e4defrag
 
 %files -n libext2fs
+%manifest %{name}.manifest
 %defattr(-, root, root)
 %{_libdir}/libext2fs.so.*
 %{_libdir}/libe2p.so.*
 
 %files -n libext2fs-devel
+%manifest %{name}.manifest
 %defattr(-, root, root)
 %{_libdir}/libext2fs.so
 %{_libdir}/libe2p.so
@@ -161,11 +167,13 @@ rm -v %{buildroot}%{_libdir}/pkgconfig/quota.pc
 %_libdir/pkgconfig/ext2fs.pc
 
 %files -n libcom_err
+%manifest %{name}.manifest
 %defattr(-, root, root)
 %{_libdir}/libcom_err.so.*
 %{_libdir}/libss.so.*
 
 %files -n libcom_err-devel
+%manifest %{name}.manifest
 %defattr(-, root, root)
 %_bindir/compile_et
 %_bindir/mk_cmds
