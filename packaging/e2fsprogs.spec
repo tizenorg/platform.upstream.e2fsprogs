@@ -101,6 +101,10 @@ rm -f $RPM_BUILD_ROOT/usr/share/man/man8/fsck.ext4dev.8*
 rm -v %{buildroot}%{_includedir}/quota/mkquota.h
 rm -v %{buildroot}%{_libdir}/pkgconfig/quota.pc
 
+mkdir -p %{buildroot}/%{_defaultdocdir}/%{name}
+install -p -m 644 README %{buildroot}/%{_defaultdocdir}/%{name}/README
+install -p -m 644 RELEASE-NOTES %{buildroot}/%{_defaultdocdir}/%{name}/RELEASE-NOTES
+
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
@@ -114,6 +118,8 @@ rm -v %{buildroot}%{_libdir}/pkgconfig/quota.pc
 %postun -n libcom_err -p /sbin/ldconfig
 
 %docs_package
+%doc %{_defaultdocdir}/%{name}/RELEASE-NOTES
+%doc %{_defaultdocdir}/%{name}/README
 
 %files devel
 %manifest %{name}.manifest
@@ -123,7 +129,6 @@ rm -v %{buildroot}%{_libdir}/pkgconfig/quota.pc
 %manifest %{name}.manifest
 %defattr(-, root, root)
 %license COPYING
-%doc RELEASE-NOTES README
 %config /etc/e2fsck.conf
 %config /etc/mke2fs.conf
 %{_sbindir}/badblocks
