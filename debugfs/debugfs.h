@@ -5,6 +5,7 @@
 #include "ss/ss.h"
 #include "ext2fs/ext2_fs.h"
 #include "ext2fs/ext2fs.h"
+#include "../misc/create_inode.h"
 #include "quota/quotaio.h"
 
 #ifdef __STDC__
