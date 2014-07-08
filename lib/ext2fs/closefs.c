@@ -20,12 +20,12 @@
 #include "ext2_fs.h"
 #include "ext2fsP.h"
 
-static int test_root(int a, int b)
+static int test_root(unsigned int a, unsigned int b)
 {
-	if (a == 0)
-		return 1;
 	while (1) {
-		if (a == 1)
+		if (a < b)
+			return 0;
+		if (a == b)
 			return 1;
 		if (a % b)
 			return 0;
@@ -33,14 +33,23 @@ static int test_root(int a, int b)
 	}
 }
 
-int ext2fs_bg_has_super(ext2_filsys fs, int group_block)
+int ext2fs_bg_has_super(ext2_filsys fs, dgrp_t group)
 {
-	if (!(fs->super->s_feature_ro_compat &
-	      EXT2_FEATURE_RO_COMPAT_SPARSE_SUPER))
+	if (group == 0)
 		return 1;
-
-	if (test_root(group_block, 3) || (test_root(group_block, 5)) ||
-	    test_root(group_block, 7))
+	if (fs->super->s_feature_compat & EXT4_FEATURE_COMPAT_SPARSE_SUPER2) {
+		if (group == fs->super->s_backup_bgs[0] ||
+		    group == fs->super->s_backup_bgs[1])
+			return 1;
+		return 0;
+	}
+	if ((group <= 1) || !(fs->super->s_feature_ro_compat &
+			      EXT2_FEATURE_RO_COMPAT_SPARSE_SUPER))
+		return 1;
+	if (!(group & 1))
+		return 0;
+	if (test_root(group, 3) || (test_root(group, 5)) ||
+	    test_root(group, 7))
 		return 1;
 
 	return 0;
@@ -243,7 +252,7 @@ void ext2fs_update_dynamic_rev(ext2_filsys fs)
 }
 
 static errcode_t write_backup_super(ext2_filsys fs, dgrp_t group,
-				    blk_t group_block,
+				    blk64_t group_block,
 				    struct ext2_super_block *super_shadow)
 {
 	dgrp_t	sgrp = group;
@@ -301,7 +310,7 @@ errcode_t ext2fs_flush2(ext2_filsys fs, int flags)
 	       fs->desc_blocks);
 
 	/* swap the group descriptors */
-	for (j=0; j < fs->group_desc_count; j++) {
+	for (j = 0; j < fs->group_desc_count; j++) {
 		gdp = ext2fs_group_desc(fs, group_shadow, j);
 		ext2fs_swap_group_desc2(fs, gdp);
 	}

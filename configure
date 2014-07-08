@@ -640,6 +640,7 @@ LINUX_CMT
 UNI_DIFF_OPTS
 SEM_INIT_LIB
 SOCKET_LIB
+SIZEOF_OFF_T
 SIZEOF_LONG_LONG
 SIZEOF_LONG
 SIZEOF_INT
@@ -714,6 +715,7 @@ DEPSTATIC_LIBQUOTA
 STATIC_LIBQUOTA
 DEPLIBQUOTA
 LIBQUOTA
+QUOTA_MAN_COMMENT
 BLKID_CMT
 DEPPROFILED_LIBBLKID
 PROFILED_LIBBLKID
@@ -834,6 +836,7 @@ enable_htree
 enable_elf_shlibs
 enable_bsd_shlibs
 enable_profile
+enable_gcov
 enable_checker
 enable_jbd_debug
 enable_blkid_debug
@@ -841,6 +844,7 @@ enable_testio_debug
 enable_libuuid
 enable_libblkid
 enable_quota
+enable_backtrace
 enable_debugfs
 enable_imager
 enable_resizer
@@ -1489,13 +1493,15 @@ Optional Features:
   --enable-elf-shlibs	  select ELF shared libraries
   --enable-bsd-shlibs	  select BSD shared libraries
   --enable-profile	  build profiling libraries
+  --enable-gcov	  	  build for coverage testing using gcov
   --enable-checker	  build checker libraries
   --enable-jbd-debug  	  enable journal debugging
   --enable-blkid-debug    enable blkid debugging
   --disable-testio-debug  disable the use of the test I/O manager for debugging
   --disable-libuuid	  do not build private uuid library
   --disable-libblkid	  do not build private blkid library
-  --enable-libquota	  enable quota support
+  --enable-quota	  enable quota support
+  --disable-backtrace	  disable use backtrace
   --disable-debugfs   	  disable support of debugfs program
   --disable-imager   	  disable support of e2image program
   --disable-resizer   	  disable support of e2resize program
@@ -2749,6 +2755,21 @@ $as_echo "Release date is ${E2FSPROGS_MONTH}, ${E2FSPROGS_YEAR}" >&6; }
 
 
 
+WITH_DIET_LIBC=
+
+# Check whether --with-diet-libc was given.
+if test "${with_diet_libc+set}" = set; then :
+  withval=$with_diet_libc; CC="diet cc -nostdinc"
+WITH_DIET_LIBC=yes
+if test -z "$LIBS"
+then
+	LIBS="-lcompat"
+else
+	LIBS="$LIBS -lcompat"
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: CC=$CC" >&5
+$as_echo "CC=$CC" >&6; }
+fi
 # Make sure we can run config.sub.
 $SHELL "$ac_aux_dir/config.sub" sun4 >/dev/null 2>&1 ||
   as_fn_error $? "cannot run $SHELL $ac_aux_dir/config.sub" "$LINENO" 5
@@ -3655,15 +3676,6 @@ $as_echo "#define HAVE_DLOPEN 1" >>confdefs.h
 fi
 
 
-WITH_DIET_LIBC=
-
-# Check whether --with-diet-libc was given.
-if test "${with_diet_libc+set}" = set; then :
-  withval=$with_diet_libc; CC="diet cc -nostdinc"
-WITH_DIET_LIBC=yes
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: CC=$CC" >&5
-$as_echo "CC=$CC" >&6; }
-fi
 
 # Check whether --with-cc was given.
 if test "${with_cc+set}" = set; then :
@@ -4667,6 +4679,18 @@ fi
 
 
 
+# Check whether --enable-gcov was given.
+if test "${enable_gcov+set}" = set; then :
+  enableval=$enable_gcov; if test "$enableval" = "yes"
+then
+	CFLAGS="-g -fprofile-arcs -ftest-coverage"
+	LDFLAGS="-fprofile-arcs -ftest-coverage"
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Enabling gcov support" >&5
+$as_echo "Enabling gcov support" >&6; }
+fi
+
+fi
+
 # Check whether --enable-checker was given.
 if test "${enable_checker+set}" = set; then :
   enableval=$enable_checker; if test "$enableval" = "no"
@@ -5182,6 +5206,9 @@ fi
 
 
 
+QUOTA_MAN_COMMENT='.\"'
+QUOTA_CMT=
+
 
 
 if test "x$ac_cv_env_PKG_CONFIG_set" != "xset"; then
@@ -5303,17 +5330,22 @@ fi
 if test "${enable_quota+set}" = set; then :
   enableval=$enable_quota; if test "$enableval" = "no"
 then
+	QUOTA_CMT=#
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Disabling quota support" >&5
 $as_echo "Disabling quota support" >&6; }
 else
+	QUOTA_CMT=
 	$as_echo "#define CONFIG_QUOTA 1" >>confdefs.h
 
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Enabling quota support" >&5
 $as_echo "Enabling quota support" >&6; }
+	QUOTA_MAN_COMMENT=""
+
 fi
 
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: Disabling quota support by default" >&5
+  QUOTA_CMT=#
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Disabling quota support by default" >&5
 $as_echo "Disabling quota support by default" >&6; }
 
 fi
@@ -5330,6 +5362,26 @@ DEPPROFILED_LIBQUOTA=$PROFILED_LIBQUOTA
 
 
 
+
+
+# Check whether --enable-backtrace was given.
+if test "${enable_backtrace+set}" = set; then :
+  enableval=$enable_backtrace; if test "$enableval" = "no"
+then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Disabling use of backtrace" >&5
+$as_echo "Disabling use of backtrace" >&6; }
+	$as_echo "#define DISABLE_BACKTRACE 1" >>confdefs.h
+
+else
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Enabling use of backtrace" >&5
+$as_echo "Enabling use of backtrace" >&6; }
+fi
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: Enabling use of backtrace by default" >&5
+$as_echo "Enabling use of backtrace by default" >&6; }
+
+fi
 
 # Check whether --enable-debugfs was given.
 if test "${enable_debugfs+set}" = set; then :
@@ -5408,9 +5460,16 @@ $as_echo "Enabling e4defrag support" >&6; }
 fi
 
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: Enabling e4defrag support by default" >&5
+  if test -z "$WITH_DIET_LIBC"
+then
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Enabling e4defrag support by default" >&5
 $as_echo "Enabling e4defrag support by default" >&6; }
-DEFRAG_CMT=
+	DEFRAG_CMT=
+else
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Disabling e4defrag support by default" >&5
+$as_echo "Disabling e4defrag support by default" >&6; }
+	DEFRAG_CMT="#"
+fi
 
 fi
 
@@ -10338,7 +10397,7 @@ fi
 done
 
 fi
-for ac_header in  	dirent.h 	errno.h 	execinfo.h 	getopt.h 	malloc.h 	mntent.h 	paths.h 	semaphore.h 	setjmp.h 	signal.h 	stdarg.h 	stdint.h 	stdlib.h 	termios.h 	termio.h 	unistd.h 	utime.h 	linux/falloc.h 	linux/fd.h 	linux/major.h 	net/if_dl.h 	netinet/in.h 	sys/disklabel.h 	sys/file.h 	sys/ioctl.h 	sys/mkdev.h 	sys/mman.h 	sys/prctl.h 	sys/queue.h 	sys/resource.h 	sys/select.h 	sys/socket.h 	sys/sockio.h 	sys/stat.h 	sys/syscall.h 	sys/sysmacros.h 	sys/time.h 	sys/types.h 	sys/un.h 	sys/wait.h
+for ac_header in  	dirent.h 	errno.h 	execinfo.h 	getopt.h 	malloc.h 	mntent.h 	paths.h 	semaphore.h 	setjmp.h 	signal.h 	stdarg.h 	stdint.h 	stdlib.h 	termios.h 	termio.h 	unistd.h 	utime.h 	linux/falloc.h 	linux/fd.h 	linux/major.h 	linux/loop.h 	net/if_dl.h 	netinet/in.h 	sys/disklabel.h 	sys/file.h 	sys/ioctl.h 	sys/mkdev.h 	sys/mman.h 	sys/prctl.h 	sys/queue.h 	sys/resource.h 	sys/select.h 	sys/socket.h 	sys/sockio.h 	sys/stat.h 	sys/syscall.h 	sys/sysmacros.h 	sys/time.h 	sys/types.h 	sys/un.h 	sys/wait.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 ac_fn_c_check_header_mongrel "$LINENO" "$ac_header" "$as_ac_Header" "$ac_includes_default"
@@ -10413,6 +10472,16 @@ ac_fn_c_check_member "$LINENO" "struct dirent" "d_reclen" "ac_cv_member_struct_d
 if test "x$ac_cv_member_struct_dirent_d_reclen" = xyes; then :
 
 $as_echo "#define HAVE_RECLEN_DIRENT 1" >>confdefs.h
+
+fi
+
+ac_fn_c_check_member "$LINENO" "struct stat" "st_atim" "ac_cv_member_struct_stat_st_atim" "$ac_includes_default"
+if test "x$ac_cv_member_struct_stat_st_atim" = xyes; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_STAT_ST_ATIM 1
+_ACEOF
+
 
 fi
 
@@ -10574,10 +10643,45 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
+# The cast to long int works around a bug in the HP C Compiler
+# version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
+# declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
+# This bug is HP SR number 8606223364.
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking size of off_t" >&5
+$as_echo_n "checking size of off_t... " >&6; }
+if ${ac_cv_sizeof_off_t+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if ac_fn_c_compute_int "$LINENO" "(long int) (sizeof (off_t))" "ac_cv_sizeof_off_t"        "$ac_includes_default"; then :
+
+else
+  if test "$ac_cv_type_off_t" = yes; then
+     { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+as_fn_error 77 "cannot compute sizeof (off_t)
+See \`config.log' for more details" "$LINENO" 5; }
+   else
+     ac_cv_sizeof_off_t=0
+   fi
+fi
+
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_sizeof_off_t" >&5
+$as_echo "$ac_cv_sizeof_off_t" >&6; }
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define SIZEOF_OFF_T $ac_cv_sizeof_off_t
+_ACEOF
+
+
 SIZEOF_SHORT=$ac_cv_sizeof_short
 SIZEOF_INT=$ac_cv_sizeof_int
 SIZEOF_LONG=$ac_cv_sizeof_long
 SIZEOF_LONG_LONG=$ac_cv_sizeof_long_long
+SIZEOF_OFF_T=$ac_cv_sizeof_off_t
+
 
 
 
@@ -10806,7 +10910,11 @@ $as_echo "#define AC_APPLE_UNIVERSAL_BUILD 1" >>confdefs.h
  presetting ac_cv_c_bigendian=no (or yes) will help" "$LINENO" 5 ;;
  esac
 
-BUILD_CC="$BUILD_CC" CPP="$CPP" /bin/sh $ac_aux_dir/parse-types.sh
+if test $cross_compiling = no; then
+  BUILD_CC="$BUILD_CC" CPP="$CPP" /bin/sh $ac_aux_dir/parse-types.sh
+else
+  CROSS_COMPILE="1" BUILD_CC="$BUILD_CC" CPP="$CPP" /bin/sh $ac_aux_dir/parse-types.sh
+fi
 ASM_TYPES_HEADER=./asm_types.h
 
 echo "/* These defines are needed for the public ext2fs.h header file */" \
@@ -10974,7 +11082,7 @@ if test "$ac_res" != no; then :
 fi
 
 fi
-for ac_func in  	__secure_getenv 	backtrace 	blkid_probe_get_topology 	chflags 	fallocate 	fallocate64 	fchown 	fdatasync 	fstat64 	ftruncate64 	getdtablesize 	getmntinfo 	getpwuid_r 	getrlimit 	getrusage 	jrand48 	llseek 	lseek64 	mallinfo 	mbstowcs 	memalign 	mmap 	msync 	nanosleep 	open64 	pathconf 	posix_fadvise 	posix_memalign 	prctl 	setmntent 	setresgid 	setresuid 	srandom 	strcasecmp 	strdup 	strnlen 	strptime 	strtoull 	sync_file_range 	sysconf 	usleep 	utime 	valloc
+for ac_func in  	__secure_getenv 	backtrace 	blkid_probe_get_topology 	blkid_probe_enable_partitions 	chflags 	fadvise64 	fallocate 	fallocate64 	fchown 	fdatasync 	fstat64 	ftruncate64 	futimes 	getcwd 	getdtablesize 	getmntinfo 	getpwuid_r 	getrlimit 	getrusage 	jrand48 	llseek 	lseek64 	mallinfo 	mbstowcs 	memalign 	mempcpy 	mmap 	msync 	nanosleep 	open64 	pathconf 	posix_fadvise 	posix_fadvise64 	posix_memalign 	prctl 	secure_getenv 	setmntent 	setresgid 	setresuid 	srandom 	stpcpy 	strcasecmp 	strdup 	strnlen 	strptime 	strtoull 	sync_file_range 	sysconf 	usleep 	utime 	valloc
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -11289,12 +11397,17 @@ fi
 
 # Check whether --with-multiarch was given.
 if test "${with_multiarch+set}" = set; then :
-  withval=$with_multiarch; libdir=$libdir/$withval
-root_libdir=$root_libdir/$withval
+  withval=$with_multiarch; if test "$withval" = "lib64"; then
+    libdir=/usr/lib64
+    root_libdir=/lib64
+else
+    libdir=$libdir/$withval
+    root_libdir=$root_libdir/$withval
+fi
 
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether linker accepts -static" >&5
-$as_echo_n "checking whether linker accepts -static... " >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether we can link with -static" >&5
+$as_echo_n "checking whether we can link with -static... " >&6; }
 if ${ac_cv_e2fsprogs_use_static+:} false; then :
   $as_echo_n "(cached) " >&6
 else
@@ -11358,9 +11471,12 @@ fi
 if test "$USE_INCLUDED_LIBINTL" = "yes" ; then
 	INCLUDES=$INCLUDES' -I$(top_builddir)/intl -I$(top_srcdir)/intl'
 fi
+if test -n "$WITH_DIET_LIBC" ; then
+	INCLUDES="$INCLUDES -D_REENTRANT"
+fi
 
 if test $cross_compiling = no; then
-   BUILD_CFLAGS="$CFLAGS $CPPFLAGS"
+   BUILD_CFLAGS="$CFLAGS $CPPFLAGS $INCLUDES -DHAVE_CONFIG_H"
    BUILD_LDFLAGS="$LDFLAGS"
 else
    BUILD_CFLAGS=

@@ -1,3 +1,225 @@
+e2fsprogs (1.42.10-1) unstable; urgency=medium
+
+  * New upstream version
+  * The mke2fs program no longer requires a force (-F) option when
+    when creating a file system in a regular file, since this is a very
+    common use case when managing virtual machine images
+  * The mke2fs program will now ask for confirmation before wiping out a
+    pre-existing file system, partition label, or physical volume
+  * Fix e2fsck so that it properly handles an inconsistent quota inode.
+    Previously the quota inode could be completely corrupted, and
+    missing quota records could be not noticed
+  * Fix mke2fs so if packed metadata blocks are enabled that the block
+    group checksum are set correctly
+  * Debugfs has new commands to allow the quota inode to be queried directly
+  * Tune2fs will allow removal of dirty journal with two "-f" options
+    (Closes: #559301)
+  * Fixed some off-line resize2fs bugs when relocating metadata blocks
+    when growing or shrinking bigalloc file systems
+  * Fixed resize2fs's calculation of the minimum required file system
+    size.  This allows resize2fs -M to shrink the file system more
+    aggressively
+  * Fixed resize2fs to properly handle shrinking a very large and empty
+    file system to a very very small size
+  * Fixed e4defrag to work with 64-bit and bigalloc file systems
+  * Fixed e2fsck to not issue a large number of very scary (but
+    harmless) corruption messages when checking very large file systems
+    when the file system has more inodes than the number of seconds
+    since January 1, 1970.
+  * E2fsck will now check the whole file system if file system problems
+    are detected durings its initial "pass 0" sanity check
+  * Filefrag now prints the "shared extent" flag which is used by some
+    file systems such as btrfs
+  * The mke2fs program would previously correctly omit the resize_inode
+    feature when creating a file system > 16TB when the fs size was
+    determined automatically.  It will now also do the right thing when
+    the user explicitly specifies the file system size.
+  * The message printed by logsave is now much less scary (Closes: #468821)
+  * Fix spelling typo in the package descriptions
+  * Update Czech, Dutch, French, German, Polish, Spanish, Sweedish, and
+    Vietnamese translations (Closes: #703048)
+  * Update/fix various man pages
+  * Fix debian/rules compatibility problem with GNU make 4.0
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Sun, 18 May 2014 22:54:38 -0400
+
+e2fsprogs (1.42.9-3) unstable; urgency=medium
+
+  * Add the ability for mke2fs to create hugefiles
+  * Add support for the sparse_super2 compat feature
+  * Mke2fs can now force all of the metadata blocks to be at the
+    beginning of the file system
+  * Fix loopback mount detection (Closes: #497984)
+  * Add support to mke2fs to create a file system at an offset
+    (Closes: #417385)
+  * Mention badblocks in the package description (Closes: #718725)
+  * Update/fix various man pages (Closes: #719184, #719189)
+  * Improve e2fsck's "superblock corrupt" message (Closes: #719185)
+  * Miscellaneous Coverity clean ups
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Tue, 04 Feb 2014 22:17:22 -0500
+
+e2fsprogs (1.42.9-2) unstable; urgency=low
+
+  * Fix lintian warning: debian-changelog-has-wrong-weekday
+  * Fix lintian warning: non-standard-dir-perm by using dh_strip's
+    --dbg-package option instead of manually managing the debug files
+  * Fix printf type format mismatch in e2image
+  * Improved debugfs's error reporting when parsing block numbers
+  * Use consistent configure options across the multiple e2fsprogs
+    builds; this means that e2fsck.static will now use the blkid library
+    shipped with util-linux, instead of the internal one shipped with
+    the e2fsprogs sources.
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Mon, 30 Dec 2013 16:56:50 -0500
+
+e2fsprogs (1.42.9-1) unstable; urgency=low
+
+  * New upstream version
+  * NMU ack (Closes: #698879)
+  * Fix cross-build support (Closes: #721365)
+  * mke2fs will detect an attempt to create a file system on a
+    loop-mounted image file
+  * Fixed a large number of bugs in resize2fs, e2fsck, debugfs, to
+    handle bigalloc and 64-bit file systems.
+  * Tune2fs will no longer allow changing the uuid on a mounted file
+    system with the uninit_bg feature enabled.
+  * E2fsck will properly allocate a new extent tree block in the rare
+    case where one is needed when rehashing an extent-mapped directory.
+  * Mke2fs wil now properly set the LARGE_FILE feature when creating a
+    journal > 2GB.
+  * Debugfs will now correctly handle free a range of inodes using the
+    freei command.
+  * E2fsck will no longer complain if an external journal was exactly
+    2**32 blocks.
+  * E2fsck will not longer try to add a missing lost+found directory
+    when run in read-only mode.
+  * Fixed some buffer overrun bugs when creating standard e2image files
+  * Mke2fs will not try to set both the meta_bg and resize_inode feature
+    when the extended option "-E resize=NNN" is specified by the user.
+  * Dumpe2fs will no longer abort when trying to print the journal
+    information from an e2image-created image file.
+  * Debugfs's "write" command can now create a sparse files
+  * Debugfs can now support a command line which is up to 8k long
+  * E2image will refuse to create a raw or qcomw image using a mounted
+    file system unless the -f option is given.
+  * E2image has been made more useful for efficiently copying file
+    systems using the -ra options.  New options to help with this use
+    case that were added: -o, -O, -p, and -c.
+  * Fixed a regression introduced in 1.42.8 which would cause e2fsck to
+    erroneously report uninitialized extents past i_size to be invalid.
+  * Fixed cases where resize2fs could corrupt a file system, especially
+    when shrinking a file system.  (Closes: #660793)
+  * Fixed resize2fs and e2fsck to not crash when operating on a file
+    system with the MMP feature enabled.
+  * Fixed debugfs's write command to properly create a zero-length file
+    (instead of creating an invalid inode).
+  * Fixed e2fsck to not crash when trying to delete an invalid
+    extent-mapped symlink.
+  * Improved debugfs's help texts
+  * Fixed a potential integer overflow problem in e2freefrag
+    (Closes: #718205)
+  * The config.guess and config.sub files have been updated to the
+    latest to help with the ppcle port.  (Closes: #732076)
+  * Updated/fixed various man pages.  (Closes: #586218, #669730,
+    #698076, #731329)
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Sat, 28 Dec 2013 23:18:36 -0500
+
+e2fsprogs (1.42.8-1) unstable; urgency=low
+
+  * New upstream version
+  * Work around Debian Bug #712530 (Closes: #708307)
+  * Fix e2fsck so it can check a read-only root file system with an
+    external journal.  (Closes: #707030)
+  * Fix off-line resizing of file systems with flex_bg && !resize_inode
+    (Closes: #696746)
+  * Change mke2fs so that it does not set the root directory to the real
+    uid/gid of the mke2fs process.  Add the extended option root_owner to
+    override this behavior.
+  * If an invalid journal size is given to mke2fs, it will now complain
+    and exit sooner.
+  * Fix resize2fs when shrinking file systems to make sure that bitmap
+    blocks aren't left outside the bounds of the shrunken file system.
+    This could happen with flex_bg file systems that were grown using
+    the old online resizing algorithm.
+  * E2fsck will now detect and repair corrupted extent trees which contain
+    invalid extents at the end of the extent tree leaf block.
+  * E2fsck will now longer complain about zero length extended attribute values.
+  * Fix a regression introduced in e2fsprogs v1.42 which caused e2image -s
+    to crash.
+  * Add safety check so tune2fs will not attempt to set the inode size to
+    be larger than the block size.
+  * Enhance chattr to allow clearing the extent flag if the kernel allows it
+  * Fix e2image with large (> 32-bit) file systems (Closes: #703067)
+  * Mke2fs will not give warnings about the bigalloc and quota options in
+    quiet mode.
+  * Debugfs was erroneously giving spurious error messages for certain
+    extent_inode subcommands which take arguments (split_node,
+    replace_node, and insert_node).  This has been fixed.
+  * Fix the parsing of the 's' (sectors) in parse_num_blocks2, which among
+    other programs is used by mke2fs.
+  * Fix texinfo incompatibilities (Closes: #712365)
+  * Updated/fixed various man pages  (Closes: #712429, #712430, #707609)
+  * Update German translation
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Thu, 20 Jun 2013 23:09:25 -0500
+
+e2fsprogs (1.42.7-1) unstable; urgency=low
+
+  * New upstream version
+  * Add warning indicating that the quota and bigalloc features are
+    still under development.
+  * Added new options to filefrag to be consistent with the version from
+    Lustre
+  * Optimized e2fsck's CPU utilization
+  * Fixed e2fsck so it detects and fixes inconsistencies in the interior
+    nodes of an inode's extent tree
+  * Fixed a potential memory corruption failure in e2fsck's error path if
+    the call to ext2fs_open2() fails.
+  * Fixed e2fsck if its logging function is enabled in e2fsck.conf, and
+    the resulting file name for the log file is longer than 100 bytes,
+    that it properly handles this situation instead of crashing.
+  * E2fsck will now report the amount of memory that it attempted to
+    allocate when a memory allocation request fails, to make it easier to
+    track down the problem.
+  * Fixed a bug in resize2fs which could cause severe file system
+    corruption when growing an ext4 file system which was formatted with
+    fewer-than-normal reserved gdt blocks
+  * Fixed resize2fs to be able to handle off-line resizes of file
+    systems with the flex_bg feature and without any reserved gdt
+    blocks or if the file system did not have the resize_inode feature
+  * Further optimize resize2fs so it doesn't use quite as much CPU when
+    resizing very large file systems.
+  * Fixed 32-bit overflow bugs which could cause resize2fs to fail and
+    possibly corrupt the file system while resizing 64-bit file systems.
+  * Fixed a big which could cause resize2fs to corrupt bigalloc file systems.
+  * Fix a crash while mke2fs is parsing "-E resize=NNN" with the 64bit
+    file system feature enabled
+  * Added better error checking to mke2fs to check for invalid
+    parameters when creating bigalloc file system.
+  * When creating bigalloc filesystems, the -g option to mke2fs will now
+    specify the number of clusters per block group.
+  * Added the "symlink", "zap_block", "block_dump", and "extent_open"
+    commands to debugfs
+  * Fixed debugfs's htree command so that all its messages are sent
+    through the pager.
+  * Fixed debugfs's dump_file and cat functions so they work correctly
+    on file systems with a block size greater than 8k.
+  * Fixed mke2fs's handling of the mmp_update_interval option
+  * Fixed e2freefrag so it works on 64-bit file systems, and so it uses
+    much less memory.
+  * E2image can now include all data blocks in the e2image output
+    file when the user specifies the -a option.
+  * Fixed debugfs's mknod command so that it updates the block group
+    statistics
+  * Document the bigalloc feature in the mke2fs man page.
+    (Closes: #669730)
+  * Update Czech, Dutch, French, German, Polish, Sweedish, and
+    Vietnamese translations
+
+ -- Theodore Y. Ts'o <tytso@mit.edu>  Tue, 21 Jan 2013 21:52:58 -0500
+
 e2fsprogs (1.42.6-1) unstable; urgency=low
 
   * New upstream version
@@ -16,6 +238,15 @@ e2fsprogs (1.42.6-1) unstable; urgency=low
     while reading the superblock.
 
  -- Theodore Y. Ts'o <tytso@mit.edu>  Fri, 21 Sep 2012 12:14:41 -0400
+
+e2fsprogs (1.42.5-1.1) unstable; urgency=low
+
+  * Non-maintainer upload.
+  * e2fsck-static, e2fsprogs: let preinst remove a symbolic link in
+    /usr/share/doc, that should have been replaced with a directory since
+    1.39+1.40-WIP-2006.10.02+dfsg-1. (Closes: #698879).
+
+ -- Nicolas Boulenguez <nicolas@debian.org>  Fri, 22 Feb 2013 23:14:59 +0100
 
 e2fsprogs (1.42.5-1) unstable; urgency=low
 

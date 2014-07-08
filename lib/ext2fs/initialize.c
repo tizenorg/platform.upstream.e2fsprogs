@@ -173,6 +173,8 @@ errcode_t ext2fs_initialize(const char *name, int flags,
 	set_field(s_raid_stripe_width, 0);	/* default stripe width: 0 */
 	set_field(s_log_groups_per_flex, 0);
 	set_field(s_flags, 0);
+	assign_field(s_backup_bgs[0]);
+	assign_field(s_backup_bgs[1]);
 	if (super->s_feature_incompat & ~EXT2_LIB_FEATURE_INCOMPAT_SUPP) {
 		retval = EXT2_ET_UNSUPP_FEATURE;
 		goto cleanup;
@@ -207,6 +209,8 @@ errcode_t ext2fs_initialize(const char *name, int flags,
 		super->s_log_block_size;
 
 	if (bigalloc_flag) {
+		unsigned long long bpg;
+
 		if (param->s_blocks_per_group &&
 		    param->s_clusters_per_group &&
 		    ((param->s_clusters_per_group * EXT2FS_CLUSTER_RATIO(fs)) !=
@@ -220,12 +224,19 @@ errcode_t ext2fs_initialize(const char *name, int flags,
 			super->s_clusters_per_group = 
 				param->s_blocks_per_group /
 				EXT2FS_CLUSTER_RATIO(fs);
-		else
+		else if (super->s_log_cluster_size + 15 < 32)
 			super->s_clusters_per_group = fs->blocksize * 8;
+		else
+			super->s_clusters_per_group = (fs->blocksize - 1) * 8;
 		if (super->s_clusters_per_group > EXT2_MAX_CLUSTERS_PER_GROUP(super))
 			super->s_clusters_per_group = EXT2_MAX_CLUSTERS_PER_GROUP(super);
-		super->s_blocks_per_group = EXT2FS_C2B(fs,
-				       super->s_clusters_per_group);
+		bpg = EXT2FS_C2B(fs,
+			(unsigned long long) super->s_clusters_per_group);
+		if (bpg >= (((unsigned long long) 1) << 32)) {
+			retval = EXT2_ET_INVALID_ARGUMENT;
+			goto cleanup;
+		}
+		super->s_blocks_per_group = bpg;
 	} else {
 		set_field(s_blocks_per_group, fs->blocksize * 8);
 		if (super->s_blocks_per_group > EXT2_MAX_BLOCKS_PER_GROUP(super))
@@ -240,6 +251,8 @@ errcode_t ext2fs_initialize(const char *name, int flags,
 		retval = EXT2_ET_INVALID_ARGUMENT;
 		goto cleanup;
 	}
+
+	set_field(s_mmp_update_interval, 0);
 
 	/*
 	 * If we're creating an external journal device, we don't need
@@ -261,8 +274,9 @@ retry:
 		goto cleanup;
 	}
 
-	if (super->s_feature_incompat & EXT4_FEATURE_INCOMPAT_64BIT)
-		super->s_desc_size = EXT2_MIN_DESC_SIZE_64BIT;
+	set_field(s_desc_size,
+		  super->s_feature_incompat & EXT4_FEATURE_INCOMPAT_64BIT ?
+		  EXT2_MIN_DESC_SIZE_64BIT : 0);
 
 	fs->desc_blocks = ext2fs_div_ceil(fs->group_desc_count,
 					  EXT2_DESC_PER_BLOCK(super));
@@ -409,6 +423,21 @@ ipg_retry:
 	 * we can do any and all allocations that depend on the block
 	 * count.
 	 */
+
+	/* Set up the locations of the backup superblocks */
+	if (super->s_feature_compat & EXT4_FEATURE_COMPAT_SPARSE_SUPER2) {
+		if (super->s_backup_bgs[0] >= fs->group_desc_count)
+			super->s_backup_bgs[0] = fs->group_desc_count - 1;
+		if (super->s_backup_bgs[1] >= fs->group_desc_count)
+			super->s_backup_bgs[1] = fs->group_desc_count - 1;
+		if (super->s_backup_bgs[0] == super->s_backup_bgs[1])
+			super->s_backup_bgs[1] = 0;
+		if (super->s_backup_bgs[0] > super->s_backup_bgs[1]) {
+			__u32 t = super->s_backup_bgs[0];
+			super->s_backup_bgs[0] = super->s_backup_bgs[1];
+			super->s_backup_bgs[1] = t;
+		}
+	}
 
 	retval = ext2fs_get_mem(strlen(fs->device_name) + 80, &buf);
 	if (retval)

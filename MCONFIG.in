@@ -29,6 +29,7 @@ man5dir = $(mandir)/man5
 man8dir = $(mandir)/man8
 infodir = @infodir@
 datadir = @datadir@
+pkgconfigdir = $(libdir)/pkgconfig
 
 @SET_MAKE@
 
@@ -49,6 +50,20 @@ datadir = @datadir@
 @ifNotGNUmake@ E = @E@
 @ifNotGNUmake@ ES = @ES@
 @ifNotGNUmake@ Q = @Q@
+
+@ifGNUmake@ CHECK=sparse
+@ifGNUmake@ CHECK_OPTS=-Wsparse-all -Wno-transparent-union -Wno-return-void -Wno-undef -Wno-non-pointer-null
+@ifGNUmake@ ifeq ("$(C)", "2")
+@ifGNUmake@   CHECK_CMD=$(CHECK) $(CHECK_OPTS) -Wbitwise -D__CHECK_ENDIAN__
+@ifGNUmake@ else
+@ifGNUmake@   ifeq ("$(C)", "1")
+@ifGNUmake@     CHECK_CMD=$(CHECK) $(CHECK_OPTS)
+@ifGNUmake@    else
+@ifGNUmake@     CHECK_CMD=@true
+@ifGNUmake@   endif
+@ifGNUmake@ endif
+
+@ifNotGNUmake@ CHECK_CMD=@true
 
 CC = @CC@
 BUILD_CC = @BUILD_CC@
@@ -96,6 +111,7 @@ LIBUUID = @LIBUUID@ @SOCKET_LIB@
 LIBQUOTA = @STATIC_LIBQUOTA@
 LIBBLKID = @LIBBLKID@ @PRIVATE_LIBS_CMT@ $(LIBUUID)
 LIBINTL = @LIBINTL@
+SYSLIBS = @LIBS@
 DEPLIBSS = $(LIB)/libss@LIB_EXT@
 DEPLIBCOM_ERR = $(LIB)/libcom_err@LIB_EXT@
 DEPLIBUUID = @DEPLIBUUID@
@@ -233,6 +249,14 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/MCONFIG \
 
 @MAINTAINER_CMT@$(top_srcdir)/configure: $(top_srcdir)/configure.in
 @MAINTAINER_CMT@	cd $(top_srcdir) && autoheader && autoconf
+
+coverage.txt: Makefile $(SRCS)
+	if test -n "$(SRCS)"; then \
+		gcov -s $(top_srcdir) -o . $(SRCS) > coverage.txt 2>&1 ; \
+	fi
+
+clean::
+	$(RM) -f *.gcda *.gcov *.gcno coverage.txt
 
 #
 # Make depend magic...

@@ -145,6 +145,43 @@ errout:
 	return retval;
 }
 
+static errcode_t mark_uninit_bg_group_blocks(ext2_filsys fs)
+{
+	dgrp_t			i;
+	blk64_t			blk;
+	ext2fs_block_bitmap	bmap = fs->block_map;
+
+	for (i = 0; i < fs->group_desc_count; i++) {
+		if (!ext2fs_bg_flags_test(fs, i, EXT2_BG_BLOCK_UNINIT))
+			continue;
+
+		ext2fs_reserve_super_and_bgd(fs, i, bmap);
+
+		/*
+		 * Mark the blocks used for the inode table
+		 */
+		blk = ext2fs_inode_table_loc(fs, i);
+		if (blk)
+			ext2fs_mark_block_bitmap_range2(bmap, blk,
+						fs->inode_blocks_per_group);
+
+		/*
+		 * Mark block used for the block bitmap
+		 */
+		blk = ext2fs_block_bitmap_loc(fs, i);
+		if (blk)
+			ext2fs_mark_block_bitmap2(bmap, blk);
+
+		/*
+		 * Mark block used for the inode bitmap
+		 */
+		blk = ext2fs_inode_bitmap_loc(fs, i);
+		if (blk)
+			ext2fs_mark_block_bitmap2(bmap, blk);
+	}
+	return 0;
+}
+
 static errcode_t read_bitmaps(ext2_filsys fs, int do_inode, int do_block)
 {
 	dgrp_t i;
@@ -154,7 +191,6 @@ static errcode_t read_bitmaps(ext2_filsys fs, int do_inode, int do_block)
 	int block_nbytes = EXT2_CLUSTERS_PER_GROUP(fs->super) / 8;
 	int inode_nbytes = EXT2_INODES_PER_GROUP(fs->super) / 8;
 	int csum_flag = 0;
-	int do_image = fs->flags & EXT2_FLAG_IMAGE_FILE;
 	unsigned int	cnt;
 	blk64_t	blk;
 	blk64_t	blk_itr = EXT2FS_B2C(fs, fs->super->s_first_data_block);
@@ -164,7 +200,8 @@ static errcode_t read_bitmaps(ext2_filsys fs, int do_inode, int do_block)
 
 	EXT2_CHECK_MAGIC(fs, EXT2_ET_MAGIC_EXT2FS_FILSYS);
 
-	if ((block_nbytes > fs->blocksize) || (inode_nbytes > fs->blocksize))
+	if ((block_nbytes > (int) fs->blocksize) ||
+	    (inode_nbytes > (int) fs->blocksize))
 		return EXT2_ET_CORRUPT_SUPERBLOCK;
 
 	fs->write_bitmaps = ext2fs_write_bitmaps;
@@ -292,6 +329,14 @@ static errcode_t read_bitmaps(ext2_filsys fs, int do_inode, int do_block)
 			ino_itr += inode_nbytes << 3;
 		}
 	}
+
+	/* Mark group blocks for any BLOCK_UNINIT groups */
+	if (do_block) {
+		retval = mark_uninit_bg_group_blocks(fs);
+		if (retval)
+			goto cleanup;
+	}
+
 success_cleanup:
 	if (inode_bitmap)
 		ext2fs_free_mem(&inode_bitmap);

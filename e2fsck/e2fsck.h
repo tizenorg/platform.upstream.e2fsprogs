@@ -67,7 +67,7 @@
 #define E2FSCK_ATTR(x)
 #endif
 
-#include "quota/mkquota.h"
+#include "quota/quotaio.h"
 
 /*
  * Exit codes used by fsck-type programs
@@ -119,9 +119,9 @@ struct dx_dir_info {
 
 struct dx_dirblock_info {
 	int		type;
-	blk_t		phys;
+	blk64_t		phys;
 	int		flags;
-	blk_t		parent;
+	blk64_t		parent;
 	ext2_dirhash_t	min_hash;
 	ext2_dirhash_t	max_hash;
 	ext2_dirhash_t	node_min_hash;
@@ -189,8 +189,9 @@ struct resource_track {
 #define E2F_FLAG_GOT_DEVSIZE	0x0800 /* Device size has been fetched */
 #define E2F_FLAG_EXITING	0x1000 /* E2fsck exiting due to errors */
 #define E2F_FLAG_TIME_INSANE	0x2000 /* Time is insane */
+#define E2F_FLAG_PROBLEMS_FIXED	0x4000 /* At least one problem was fixed */
 
-#define E2F_RESET_FLAGS (E2F_FLAG_TIME_INSANE)
+#define E2F_RESET_FLAGS (E2F_FLAG_TIME_INSANE | E2F_FLAG_PROBLEMS_FIXED)
 
 /*
  * Defines for indicating the e2fsck pass number
@@ -435,25 +436,24 @@ extern struct dx_dir_info *e2fsck_dx_dir_info_iter(e2fsck_t ctx, int *control);
 /* ea_refcount.c */
 extern errcode_t ea_refcount_create(int size, ext2_refcount_t *ret);
 extern void ea_refcount_free(ext2_refcount_t refcount);
-extern errcode_t ea_refcount_fetch(ext2_refcount_t refcount, blk_t blk,
-				   int *ret);
+extern errcode_t ea_refcount_fetch(ext2_refcount_t refcount, blk64_t blk, int *ret);
 extern errcode_t ea_refcount_increment(ext2_refcount_t refcount,
-				       blk_t blk, int *ret);
+				       blk64_t blk, int *ret);
 extern errcode_t ea_refcount_decrement(ext2_refcount_t refcount,
-				       blk_t blk, int *ret);
+				       blk64_t blk, int *ret);
 extern errcode_t ea_refcount_store(ext2_refcount_t refcount,
-				   blk_t blk, int count);
+				   blk64_t blk, int count);
 extern blk_t ext2fs_get_refcount_size(ext2_refcount_t refcount);
 extern void ea_refcount_intr_begin(ext2_refcount_t refcount);
-extern blk_t ea_refcount_intr_next(ext2_refcount_t refcount, int *ret);
+extern blk64_t ea_refcount_intr_next(ext2_refcount_t refcount, int *ret);
 
 /* ehandler.c */
 extern const char *ehandler_operation(const char *op);
 extern void ehandler_init(io_channel channel);
 
 /* journal.c */
-extern int e2fsck_check_ext3_journal(e2fsck_t ctx);
-extern int e2fsck_run_ext3_journal(e2fsck_t ctx);
+extern errcode_t e2fsck_check_ext3_journal(e2fsck_t ctx);
+extern errcode_t e2fsck_run_ext3_journal(e2fsck_t ctx);
 extern void e2fsck_move_ext3_journal(e2fsck_t ctx);
 extern int e2fsck_fix_ext3_journal_hint(e2fsck_t ctx);
 
@@ -548,7 +548,7 @@ extern void e2fsck_write_inode_full(e2fsck_t ctx, unsigned long ino,
 #ifdef MTRACE
 extern void mtrace_print(char *mesg);
 #endif
-extern blk_t get_backup_sb(e2fsck_t ctx, ext2_filsys fs,
+extern blk64_t get_backup_sb(e2fsck_t ctx, ext2_filsys fs,
 			   const char *name, io_manager manager);
 extern int ext2_file_type(unsigned int mode);
 extern int write_all(int fd, char *buf, size_t count);

@@ -105,10 +105,10 @@ static void dump_file(const char *cmdname, ext2_ino_t ino, int fd,
 {
 	errcode_t retval;
 	struct ext2_inode	inode;
-	char 		buf[8192];
+	char		*buf = 0;
 	ext2_file_t	e2_file;
 	int		nbytes;
-	unsigned int	got;
+	unsigned int	got, blocksize = current_fs->blocksize;
 
 	if (debugfs_read_inode(ino, &inode, cmdname))
 		return;
@@ -118,8 +118,13 @@ static void dump_file(const char *cmdname, ext2_ino_t ino, int fd,
 		com_err(cmdname, retval, "while opening ext2 file");
 		return;
 	}
+	retval = ext2fs_get_mem(blocksize, &buf);
+	if (retval) {
+		com_err(cmdname, retval, "while allocating memory");
+		return;
+	}
 	while (1) {
-		retval = ext2fs_file_read(e2_file, buf, sizeof(buf), &got);
+		retval = ext2fs_file_read(e2_file, buf, blocksize, &got);
 		if (retval)
 			com_err(cmdname, retval, "while reading ext2 file");
 		if (got == 0)
@@ -128,6 +133,8 @@ static void dump_file(const char *cmdname, ext2_ino_t ino, int fd,
 		if ((unsigned) nbytes != got)
 			com_err(cmdname, errno, "while writing file");
 	}
+	if (buf)
+		ext2fs_free_mem(&buf);
 	retval = ext2fs_file_close(e2_file);
 	if (retval) {
 		com_err(cmdname, retval, "while closing ext2 file");
@@ -136,8 +143,6 @@ static void dump_file(const char *cmdname, ext2_ino_t ino, int fd,
 
 	if (preserve)
 		fix_perms("dump_file", &inode, fd, outname);
-	else if (fd != 1)
-		close(fd);
 
 	return;
 }
@@ -184,6 +189,11 @@ void do_dump(int argc, char **argv)
 	}
 
 	dump_file(argv[0], inode, fd, preserve, out_fn);
+	if (close(fd) != 0) {
+		com_err(argv[0], errno, "while closing %s for dump_inode",
+			out_fn);
+		return;
+	}
 
 	return;
 }
@@ -266,6 +276,10 @@ static void rdump_inode(ext2_ino_t ino, struct ext2_inode *inode,
 			goto errout;
 		}
 		dump_file("rdump", ino, fd, 1, fullname);
+		if (close(fd) != 0) {
+			com_err("rdump", errno, "while dumping %s", fullname);
+			goto errout;
+		}
 	}
 	else if (LINUX_S_ISDIR(inode->i_mode) && strcmp(name, ".") && strcmp(name, "..")) {
 		errcode_t retval;

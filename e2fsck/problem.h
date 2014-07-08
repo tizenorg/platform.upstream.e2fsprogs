@@ -18,7 +18,7 @@ struct problem_context {
 	struct ext2_dir_entry *dirent;
 	blk64_t	blk, blk2;
 	e2_blkcnt_t	blkcount;
-	int		group;
+	dgrp_t		group;
 	__u32		csum1, csum2;
 	__u64	num;
 	const char *str;
@@ -248,6 +248,9 @@ struct problem_context {
 
 /* Checking group descriptor failed */
 #define PR_0_CHECK_DESC_FAILED			0x000045
+
+/* 64bit is set but extents are not set. */
+#define PR_0_64BIT_WITHOUT_EXTENTS		0x000048
 
 /*
  * Pass 1 errors
@@ -558,6 +561,10 @@ struct problem_context {
 /* Extent has zero length */
 #define PR_1_EXTENT_LENGTH_ZERO		0x010066
 
+/* Index start doesn't match start of next extent down */
+#define PR_1_EXTENT_INDEX_START_INVALID	0x01006D
+
+#define PR_1_EXTENT_END_OUT_OF_BOUNDS	0x01006E
 /*
  * Pass 1b errors
  */
@@ -585,7 +592,6 @@ struct problem_context {
 
 /* Error adjusting EA refcount */
 #define PR_1B_ADJ_EA_REFCOUNT	0x011007
-
 
 /* Pass 1C: Scan directories for inodes with dup blocks. */
 #define PR_1C_PASS_HEADER	0x012000
