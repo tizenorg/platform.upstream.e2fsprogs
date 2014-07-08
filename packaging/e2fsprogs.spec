@@ -98,8 +98,6 @@ rm -f $RPM_BUILD_ROOT/%{_sbindir}/mkfs.ext4dev
 rm -f $RPM_BUILD_ROOT/%{_sbindir}/fsck.ext4dev
 rm -f $RPM_BUILD_ROOT/usr/share/man/man8/mkfs.ext4dev.8*
 rm -f $RPM_BUILD_ROOT/usr/share/man/man8/fsck.ext4dev.8*
-rm -v %{buildroot}%{_includedir}/quota/mkquota.h
-rm -v %{buildroot}%{_libdir}/pkgconfig/quota.pc
 
 mkdir -p %{buildroot}/%{_defaultdocdir}/%{name}
 install -p -m 644 README %{buildroot}/%{_defaultdocdir}/%{name}/README
