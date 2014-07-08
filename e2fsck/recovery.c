@@ -283,12 +283,9 @@ int journal_recover(journal_t *journal)
 int journal_skip_recovery(journal_t *journal)
 {
 	int			err;
-	journal_superblock_t *	sb;
-
 	struct recovery_info	info;
 
 	memset (&info, 0, sizeof(info));
-	sb = journal->j_superblock;
 
 	err = do_one_pass(journal, &info, PASS_SCAN);
 
@@ -297,6 +294,8 @@ int journal_skip_recovery(journal_t *journal)
 		++journal->j_transaction_sequence;
 	} else {
 #ifdef CONFIG_JBD_DEBUG
+		journal_superblock_t *sb = journal->j_superblock;
+
 		int dropped = info.end_transaction - be32_to_cpu(sb->s_sequence);
 #endif
 		jbd_debug(1,
@@ -363,11 +362,6 @@ static int do_one_pass(journal_t *journal,
 	int			tag_bytes = journal_tag_bytes(journal);
 	__u32			crc32_sum = ~0; /* Transactional Checksums */
 
-	/* Precompute the maximum metadata descriptors in a descriptor block */
-	int			MAX_BLOCKS_PER_DESC;
-	MAX_BLOCKS_PER_DESC = ((journal->j_blocksize-sizeof(journal_header_t))
-			       / tag_bytes);
-
 	/*
 	 * First thing is to establish what we expect to find in the log
 	 * (in terms of transaction IDs), and where (in terms of log
@@ -408,14 +402,14 @@ static int do_one_pass(journal_t *journal,
 			if (tid_geq(next_commit_ID, info->end_transaction))
 				break;
 
-		jbd_debug(2, "Scanning for sequence ID %u at %lu/%lu\n",
+		jbd_debug(2, "Scanning for sequence ID %u at %llu/%lu\n",
 			  next_commit_ID, next_log_block, journal->j_last);
 
 		/* Skip over each chunk of the transaction looking
 		 * either the next descriptor block or the final commit
 		 * record. */
 
-		jbd_debug(3, "JBD: checking block %ld\n", next_log_block);
+		jbd_debug(3, "JBD: checking block %llu\n", next_log_block);
 		err = jread(&bh, journal, next_log_block);
 		if (err)
 			goto failed;
@@ -735,12 +729,16 @@ static int scan_revoke_records(journal_t *journal, struct buffer_head *bh,
 		unsigned long long blocknr;
 		int err;
 
-		if (record_len == 4)
-			blocknr = ext2fs_be32_to_cpu(*((__be32 *)(bh->b_data +
-								  offset)));
-		else
-			blocknr = ext2fs_be64_to_cpu(*((__be64 *)(bh->b_data +
-								  offset)));
+		if (record_len == 4) {
+			__be32 b;
+			memcpy(&b, bh->b_data + offset, sizeof(__be32));
+			blocknr = ext2fs_be32_to_cpu(b);
+		} else {
+			__be64 b;
+			memcpy(&b, bh->b_data + offset, sizeof(__be64));
+			blocknr = ext2fs_be64_to_cpu(b);
+		}
+
 		offset += record_len;
 		err = journal_set_revoke(journal, blocknr, sequence);
 		if (err)

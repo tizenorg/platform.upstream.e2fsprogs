@@ -35,10 +35,11 @@
 
 // #include <linux/falloc.h>
 #define FALLOC_FL_KEEP_SIZE	0x01
+#define FALLOC_FL_PUNCH_HOLE	0x02 /* de-allocates range */
 
 void usage(void)
 {
-	printf("Usage: fallocate [-nt] [-o offset] -l length filename\n");
+	printf("Usage: fallocate [-npt] [-o offset] -l length filename\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -94,11 +95,16 @@ int main(int argc, char **argv)
 	int	error;
 	int	tflag = 0;
 
-	while ((opt = getopt(argc, argv, "nl:ot")) != -1) {
+	while ((opt = getopt(argc, argv, "npl:o:t")) != -1) {
 		switch(opt) {
 		case 'n':
 			/* do not change filesize */
 			falloc_mode = FALLOC_FL_KEEP_SIZE;
+			break;
+		case 'p':
+			/* punch mode */
+			falloc_mode = (FALLOC_FL_PUNCH_HOLE |
+				       FALLOC_FL_KEEP_SIZE);
 			break;
 		case 'l':
 			length = cvtnum(optarg);

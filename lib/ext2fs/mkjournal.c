@@ -250,6 +250,7 @@ static int mkjournal_proc(ext2_filsys	fs,
 			es->err = retval;
 			return BLOCK_ABORT;
 		}
+		ext2fs_block_alloc_stats2(fs, new_blk, +1);
 		es->newblocks++;
 	}
 	if (blockcnt >= 0)
@@ -285,7 +286,6 @@ static int mkjournal_proc(ext2_filsys	fs,
 		return BLOCK_ABORT;
 	}
 	*blocknr = es->goal = new_blk;
-	ext2fs_block_alloc_stats2(fs, new_blk, +1);
 
 	if (es->num_blocks == 0)
 		return (BLOCK_CHANGED | BLOCK_ABORT);
@@ -295,49 +295,14 @@ static int mkjournal_proc(ext2_filsys	fs,
 }
 
 /*
- * This function creates a journal using direct I/O routines.
+ * Calculate the initial goal block to be roughly at the middle of the
+ * filesystem.  Pick a group that has the largest number of free
+ * blocks.
  */
-static errcode_t write_journal_inode(ext2_filsys fs, ext2_ino_t journal_ino,
-				     blk_t num_blocks, int flags)
+static blk64_t get_midpoint_journal_block(ext2_filsys fs)
 {
-	char			*buf;
-	dgrp_t			group, start, end, i, log_flex;
-	errcode_t		retval;
-	struct ext2_inode	inode;
-	unsigned long long	inode_size;
-	struct mkjournal_struct	es;
+	dgrp_t	group, start, end, i, log_flex;
 
-	if ((retval = ext2fs_create_journal_superblock(fs, num_blocks, flags,
-						       &buf)))
-		return retval;
-
-	if ((retval = ext2fs_read_bitmaps(fs)))
-		return retval;
-
-	if ((retval = ext2fs_read_inode(fs, journal_ino, &inode)))
-		return retval;
-
-	if (inode.i_blocks > 0)
-		return EEXIST;
-
-	es.num_blocks = num_blocks;
-	es.newblocks = 0;
-	es.buf = buf;
-	es.err = 0;
-	es.flags = flags;
-	es.zero_count = 0;
-
-	if (fs->super->s_feature_incompat & EXT3_FEATURE_INCOMPAT_EXTENTS) {
-		inode.i_flags |= EXT4_EXTENTS_FL;
-		if ((retval = ext2fs_write_inode(fs, journal_ino, &inode)))
-			return retval;
-	}
-
-	/*
-	 * Set the initial goal block to be roughly at the middle of
-	 * the filesystem.  Pick a group that has the largest number
-	 * of free blocks.
-	 */
 	group = ext2fs_group_of_blk2(fs, (ext2fs_blocks_count(fs->super) -
 					 fs->super->s_first_data_block) / 2);
 	log_flex = 1 << fs->super->s_log_groups_per_flex;
@@ -353,13 +318,53 @@ static errcode_t write_journal_inode(ext2_filsys fs, ext2_ino_t journal_ino,
 		start = (group > 0) ? group-1 : group;
 	end = ((group+1) < fs->group_desc_count) ? group+1 : group;
 	group = start;
-	for (i=start+1; i <= end; i++)
+	for (i = start + 1; i <= end; i++)
 		if (ext2fs_bg_free_blocks_count(fs, i) >
 		    ext2fs_bg_free_blocks_count(fs, group))
 			group = i;
+	return ext2fs_group_first_block2(fs, group);
+}
 
-	es.goal = (fs->super->s_blocks_per_group * group) +
-		fs->super->s_first_data_block;
+/*
+ * This function creates a journal using direct I/O routines.
+ */
+static errcode_t write_journal_inode(ext2_filsys fs, ext2_ino_t journal_ino,
+				     blk_t num_blocks, blk64_t goal, int flags)
+{
+	char			*buf;
+	errcode_t		retval;
+	struct ext2_inode	inode;
+	unsigned long long	inode_size;
+	struct mkjournal_struct	es;
+
+	if ((retval = ext2fs_create_journal_superblock(fs, num_blocks, flags,
+						       &buf)))
+		return retval;
+
+	if ((retval = ext2fs_read_bitmaps(fs)))
+		goto out2;
+
+	if ((retval = ext2fs_read_inode(fs, journal_ino, &inode)))
+		goto out2;
+
+	if (inode.i_blocks > 0) {
+		retval = EEXIST;
+		goto out2;
+	}
+
+	es.num_blocks = num_blocks;
+	es.newblocks = 0;
+	es.buf = buf;
+	es.err = 0;
+	es.flags = flags;
+	es.zero_count = 0;
+	es.goal = (goal != ~0ULL) ? goal : get_midpoint_journal_block(fs);
+
+	if (fs->super->s_feature_incompat & EXT3_FEATURE_INCOMPAT_EXTENTS) {
+		inode.i_flags |= EXT4_EXTENTS_FL;
+		if ((retval = ext2fs_write_inode(fs, journal_ino, &inode)))
+			goto out2;
+	}
 
 	retval = ext2fs_block_iterate3(fs, journal_ino, BLOCK_FLAG_APPEND,
 				       0, mkjournal_proc, &es);
@@ -380,7 +385,7 @@ static errcode_t write_journal_inode(ext2_filsys fs, ext2_ino_t journal_ino,
 	inode_size = (unsigned long long)fs->blocksize * num_blocks;
 	inode.i_size = inode_size & 0xFFFFFFFF;
 	inode.i_size_high = (inode_size >> 32) & 0xFFFFFFFF;
-	if (inode.i_size_high)
+	if (ext2fs_needs_large_file_feature(inode_size))
 		fs->super->s_feature_ro_compat |=
 			EXT2_FEATURE_RO_COMPAT_LARGE_FILE;
 	ext2fs_iblk_add_blocks(fs, &inode, es.newblocks);
@@ -400,6 +405,7 @@ static errcode_t write_journal_inode(ext2_filsys fs, ext2_ino_t journal_ino,
 
 errout:
 	ext2fs_zero_blocks2(0, 0, 0, 0, 0);
+out2:
 	ext2fs_free_mem(&buf);
 	return retval;
 }
@@ -490,13 +496,14 @@ errcode_t ext2fs_add_journal_device(ext2_filsys fs, ext2_filsys journal_dev)
  * POSIX routines if the filesystem is mounted, or using direct I/O
  * functions if it is not.
  */
-errcode_t ext2fs_add_journal_inode(ext2_filsys fs, blk_t num_blocks, int flags)
+errcode_t ext2fs_add_journal_inode2(ext2_filsys fs, blk_t num_blocks,
+				    blk64_t goal, int flags)
 {
 	errcode_t		retval;
 	ext2_ino_t		journal_ino;
 	struct stat		st;
 	char			jfile[1024];
-	int			mount_flags, f;
+	int			mount_flags;
 	int			fd = -1;
 
 	if (flags & EXT2_MKJOURNAL_NO_MNT_CHECK)
@@ -507,6 +514,9 @@ errcode_t ext2fs_add_journal_inode(ext2_filsys fs, blk_t num_blocks, int flags)
 		return retval;
 
 	if (mount_flags & EXT2_MF_MOUNTED) {
+#if HAVE_EXT2_IOCTLS
+		int f = 0;
+#endif
 		strcat(jfile, "/.journal");
 
 		/*
@@ -519,9 +529,10 @@ errcode_t ext2fs_add_journal_inode(ext2_filsys fs, blk_t num_blocks, int flags)
 #if HAVE_EXT2_IOCTLS
 		fd = open(jfile, O_RDONLY);
 		if (fd >= 0) {
-			f = 0;
-			ioctl(fd, EXT2_IOC_SETFLAGS, &f);
+			retval = ioctl(fd, EXT2_IOC_SETFLAGS, &f);
 			close(fd);
+			if (retval)
+				return retval;
 		}
 #endif
 #endif
@@ -577,7 +588,7 @@ errcode_t ext2fs_add_journal_inode(ext2_filsys fs, blk_t num_blocks, int flags)
 		}
 		journal_ino = EXT2_JOURNAL_INO;
 		if ((retval = write_journal_inode(fs, journal_ino,
-						  num_blocks, flags)))
+						  num_blocks, goal, flags)))
 			return retval;
 	}
 
@@ -590,10 +601,16 @@ errcode_t ext2fs_add_journal_inode(ext2_filsys fs, blk_t num_blocks, int flags)
 	ext2fs_mark_super_dirty(fs);
 	return 0;
 errout:
-	if (fd > 0)
+	if (fd >= 0)
 		close(fd);
 	return retval;
 }
+
+errcode_t ext2fs_add_journal_inode(ext2_filsys fs, blk_t num_blocks, int flags)
+{
+	return ext2fs_add_journal_inode2(fs, num_blocks, ~0ULL, flags);
+}
+
 
 #ifdef DEBUG
 main(int argc, char **argv)

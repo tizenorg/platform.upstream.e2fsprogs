@@ -55,7 +55,7 @@ void fatal_error(e2fsck_t ctx, const char *msg)
 		fprintf (stderr, "e2fsck: %s\n", msg);
 	if (!fs)
 		goto out;
-	if (fs->io) {
+	if (fs->io && fs->super) {
 		ext2fs_mmp_stop(ctx->fs);
 		if (ctx->fs->io->magic == EXT2_ET_MAGIC_IO_CHANNEL)
 			io_channel_flush(ctx->fs->io);
@@ -121,7 +121,8 @@ void *e2fsck_allocate_memory(e2fsck_t ctx, unsigned int size,
 #endif
 	ret = malloc(size);
 	if (!ret) {
-		sprintf(buf, "Can't allocate %s\n", description);
+		sprintf(buf, "Can't allocate %u bytes for %s\n",
+			size, description);
 		fatal_error(ctx, buf);
 	}
 	memset(ret, 0, size);
@@ -219,7 +220,7 @@ int ask_yn(e2fsck_t ctx, const char * string, int def)
 				log_out(ctx, "\n");
 				longjmp(e2fsck_global_ctx->abort_loc, 1);
 			}
-			log_out(ctx, _("cancelled!\n"));
+			log_out(ctx, "%s", _("cancelled!\n"));
 			return 0;
 		}
 		if (strchr(short_yes, (char) c)) {
@@ -234,9 +235,9 @@ int ask_yn(e2fsck_t ctx, const char * string, int def)
 			break;
 	}
 	if (def)
-		log_out(ctx, _("yes\n"));
+		log_out(ctx, "%s", _("yes\n"));
 	else
-		log_out(ctx, _("no\n"));
+		log_out(ctx, "%s", _("no\n"));
 #ifdef HAVE_TERMIOS_H
 	tcsetattr (0, TCSANOW, &termios);
 #endif
@@ -438,7 +439,7 @@ void print_resource_track(e2fsck_t ctx, const char *desc,
 void e2fsck_read_inode(e2fsck_t ctx, unsigned long ino,
 			      struct ext2_inode * inode, const char *proc)
 {
-	int retval;
+	errcode_t retval;
 
 	retval = ext2fs_read_inode(ctx->fs, ino, inode);
 	if (retval) {
@@ -452,7 +453,7 @@ void e2fsck_read_inode_full(e2fsck_t ctx, unsigned long ino,
 			    struct ext2_inode *inode, int bufsize,
 			    const char *proc)
 {
-	int retval;
+	errcode_t retval;
 
 	retval = ext2fs_read_inode_full(ctx->fs, ino, inode, bufsize);
 	if (retval) {
@@ -462,11 +463,11 @@ void e2fsck_read_inode_full(e2fsck_t ctx, unsigned long ino,
 	}
 }
 
-extern void e2fsck_write_inode_full(e2fsck_t ctx, unsigned long ino,
-			       struct ext2_inode * inode, int bufsize,
-			       const char *proc)
+void e2fsck_write_inode_full(e2fsck_t ctx, unsigned long ino,
+			     struct ext2_inode * inode, int bufsize,
+			     const char *proc)
 {
-	int retval;
+	errcode_t retval;
 
 	retval = ext2fs_write_inode_full(ctx->fs, ino, inode, bufsize);
 	if (retval) {
@@ -476,10 +477,10 @@ extern void e2fsck_write_inode_full(e2fsck_t ctx, unsigned long ino,
 	}
 }
 
-extern void e2fsck_write_inode(e2fsck_t ctx, unsigned long ino,
-			       struct ext2_inode * inode, const char *proc)
+void e2fsck_write_inode(e2fsck_t ctx, unsigned long ino,
+			struct ext2_inode * inode, const char *proc)
 {
-	int retval;
+	errcode_t retval;
 
 	retval = ext2fs_write_inode(ctx->fs, ino, inode);
 	if (retval) {
@@ -500,14 +501,14 @@ void mtrace_print(char *mesg)
 }
 #endif
 
-blk_t get_backup_sb(e2fsck_t ctx, ext2_filsys fs, const char *name,
-		   io_manager manager)
+blk64_t get_backup_sb(e2fsck_t ctx, ext2_filsys fs, const char *name,
+		      io_manager manager)
 {
 	struct ext2_super_block *sb;
 	io_channel		io = NULL;
 	void			*buf = NULL;
 	int			blocksize;
-	blk_t			superblock, ret_sb = 8193;
+	blk64_t			superblock, ret_sb = 8193;
 
 	if (fs && fs->super) {
 		ret_sb = (fs->super->s_blocks_per_group +
@@ -616,7 +617,7 @@ int ext2_file_type(unsigned int mode)
 errcode_t e2fsck_zero_blocks(ext2_filsys fs, blk_t blk, int num,
 			     blk_t *ret_blk, int *ret_count)
 {
-	int		j, count, next_update, next_update_incr;
+	int		j, count;
 	static char	*buf;
 	errcode_t	retval;
 
@@ -632,17 +633,13 @@ errcode_t e2fsck_zero_blocks(ext2_filsys fs, blk_t blk, int num,
 	if (!buf) {
 		buf = malloc(fs->blocksize * STRIDE_LENGTH);
 		if (!buf) {
-			com_err("malloc", ENOMEM,
+			com_err("malloc", ENOMEM, "%s",
 				_("while allocating zeroizing buffer"));
 			exit(1);
 		}
 		memset(buf, 0, fs->blocksize * STRIDE_LENGTH);
 	}
 	/* OK, do the write loop */
-	next_update = 0;
-	next_update_incr = num / 100;
-	if (next_update_incr < 1)
-		next_update_incr = 1;
 	for (j = 0; j < num; j += STRIDE_LENGTH, blk += STRIDE_LENGTH) {
 		count = num - j;
 		if (count > STRIDE_LENGTH)
@@ -795,14 +792,13 @@ void e2fsck_set_bitmap_type(ext2_filsys fs, unsigned int default_type,
 			    const char *profile_name, unsigned int *old_type)
 {
 	unsigned type;
-	errcode_t	retval;
+	e2fsck_t ctx = (e2fsck_t) fs->priv_data;
 
 	if (old_type)
 		*old_type = fs->default_bitmap_type;
-	profile_get_uint(e2fsck_global_ctx->profile, "bitmaps",
-			 profile_name, 0, default_type, &type);
-	profile_get_uint(e2fsck_global_ctx->profile, "bitmaps",
-			 "all", 0, type, &type);
+	profile_get_uint(ctx->profile, "bitmaps", profile_name, 0,
+			 default_type, &type);
+	profile_get_uint(ctx->profile, "bitmaps", "all", 0, type, &type);
 	fs->default_bitmap_type = type ? type : default_type;
 }
 

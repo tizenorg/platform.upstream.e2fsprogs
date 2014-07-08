@@ -42,6 +42,7 @@ static void setup_tdb(e2fsck_t ctx, ext2_ino_t num_dirs)
 	struct dir_info_db	*db = ctx->dir_info;
 	unsigned int		threshold;
 	errcode_t		retval;
+	mode_t			save_umask;
 	char			*tdb_dir, uuid[40];
 	int			fd, enable;
 
@@ -62,7 +63,9 @@ static void setup_tdb(e2fsck_t ctx, ext2_ino_t num_dirs)
 
 	uuid_unparse(ctx->fs->super->s_uuid, uuid);
 	sprintf(db->tdb_fn, "%s/%s-dirinfo-XXXXXX", tdb_dir, uuid);
+	save_umask = umask(077);
 	fd = mkstemp(db->tdb_fn);
+	umask(save_umask);
 	if (fd < 0) {
 		db->tdb = NULL;
 		return;
@@ -320,7 +323,7 @@ int e2fsck_get_num_dirinfo(e2fsck_t ctx)
 	return ctx->dir_info ? ctx->dir_info->count : 0;
 }
 
-extern struct dir_info_iter *e2fsck_dir_info_iter_begin(e2fsck_t ctx)
+struct dir_info_iter *e2fsck_dir_info_iter_begin(e2fsck_t ctx)
 {
 	struct dir_info_iter *iter;
 	struct dir_info_db *db = ctx->dir_info;
@@ -334,8 +337,8 @@ extern struct dir_info_iter *e2fsck_dir_info_iter_begin(e2fsck_t ctx)
 	return iter;
 }
 
-extern void e2fsck_dir_info_iter_end(e2fsck_t ctx EXT2FS_ATTR((unused)),
-				     struct dir_info_iter *iter)
+void e2fsck_dir_info_iter_end(e2fsck_t ctx EXT2FS_ATTR((unused)),
+			      struct dir_info_iter *iter)
 {
 	free(iter->tdb_iter.dptr);
 	ext2fs_free_mem(&iter);

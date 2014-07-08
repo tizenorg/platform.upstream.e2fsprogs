@@ -119,11 +119,13 @@ static struct e2fsck_problem problem_table[] = {
 
 	/* Superblock corrupt */
 	{ PR_0_SB_CORRUPT,
-	  N_("\nThe @S could not be read or does not describe a correct ext2\n"
-	  "@f.  If the @v is valid and it really contains an ext2\n"
+	  N_("\nThe @S could not be read or does not describe a valid ext2/ext3/ext4\n"
+	  "@f.  If the @v is valid and it really contains an ext2/ext3/ext4\n"
 	  "@f (and not swap or ufs or something else), then the @S\n"
 	  "is corrupt, and you might try running e2fsck with an alternate @S:\n"
-	  "    e2fsck -b %S <@v>\n\n"),
+	  "    e2fsck -b 8193 <@v>\n"
+	  " or\n"
+	  "    e2fsck -b 32768 <@v>\n\n"),
 	  PROMPT_NONE, PR_FATAL },
 
 	/* Filesystem size is wrong */
@@ -432,6 +434,11 @@ static struct e2fsck_problem problem_table[] = {
 	{ PR_0_CHECK_DESC_FAILED,
 	  N_("ext2fs_check_desc: %m\n"),
 	  PROMPT_NONE, 0 },
+
+	/* 64bit is set but extents is unset. */
+	{ PR_0_64BIT_WITHOUT_EXTENTS,
+	  N_("@S 64bit filesystems needs extents to access the whole disk.  "),
+	  PROMPT_FIX, PR_PREEN_OK | PR_NO_OK},
 
 	/* Pass 1 errors */
 
@@ -946,6 +953,20 @@ static struct e2fsck_problem problem_table[] = {
 	  N_("@i %i has zero length extent\n\t(@n logical @b %c, physical @b %b)\n"),
 	  PROMPT_CLEAR, 0 },
 
+	/*
+	 * Interior extent node logical offset doesn't match first node below it
+	 */
+	{ PR_1_EXTENT_INDEX_START_INVALID,
+	  N_("Interior @x node level %N of @i %i:\n"
+	     "Logical start %b does not match logical start %c at next level.  "),
+	  PROMPT_FIX, 0 },
+
+	/* Extent end is out of bounds for the tree */
+	{ PR_1_EXTENT_END_OUT_OF_BOUNDS,
+	  N_("@i %i, end of extent exceeds allowed value\n\t(logical @b %c, physical @b %b, len %N)\n"),
+	  PROMPT_CLEAR, 0 },
+
+
 	/* Pass 1b errors */
 
 	/* Pass 1B: Rescan for duplicate/bad blocks */
@@ -1050,12 +1071,12 @@ static struct e2fsck_problem problem_table[] = {
 	  N_("@n @i number for '.' in @d @i %i.\n"),
 	  PROMPT_FIX, 0 },
 
-	/* Directory entry has bad inode number */
+	/* Entry 'xxxx' in /a/b/c has bad inode number.*/
 	{ PR_2_BAD_INO,
 	  N_("@E has @n @i #: %Di.\n"),
 	  PROMPT_CLEAR, 0 },
 
-	/* Directory entry has deleted or unused inode */
+	/* Entry 'xxxx' in /a/b/c has deleted/unused inode nnnnn.*/
 	{ PR_2_UNUSED_INODE,
 	  N_("@E has @D/unused @i %Di.  "),
 	  PROMPT_CLEAR, PR_PREEN_OK },
@@ -1816,7 +1837,7 @@ int fix_problem(e2fsck_t ctx, problem_t code, struct problem_context *pctx)
 		return 0;
 	}
 	if (!(ptr->flags & PR_CONFIG)) {
-		char	key[9], *new_desc;
+		char	key[9], *new_desc = NULL;
 
 		sprintf(key, "0x%06x", code);
 
@@ -1950,6 +1971,9 @@ int fix_problem(e2fsck_t ctx, problem_t code, struct problem_context *pctx)
 
 	if (ptr->flags & PR_AFTER_CODE)
 		answer = fix_problem(ctx, ptr->second_code, pctx);
+
+	if (answer && (ptr->prompt != PROMPT_NONE))
+		ctx->flags |= E2F_FLAG_PROBLEMS_FIXED;
 
 	return answer;
 }

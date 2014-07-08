@@ -21,6 +21,33 @@ extern char *program_name;
 
 #define MAX_32_NUM ((((unsigned long long) 1) << 32) - 1)
 
+#ifdef __linux__
+static int parse_version_number(const char *s)
+{
+	int	major, minor, rev;
+	char	*endptr;
+	const char *cp = s;
+
+	if (!s)
+		return 0;
+	major = strtol(cp, &endptr, 10);
+	if (cp == endptr || *endptr != '.')
+		return 0;
+	cp = endptr + 1;
+	minor = strtol(cp, &endptr, 10);
+	if (cp == endptr || *endptr != '.')
+		return 0;
+	cp = endptr + 1;
+	rev = strtol(cp, &endptr, 10);
+	if (cp == endptr)
+		return 0;
+	return ((((major * 256) + minor) * 256) + rev);
+}
+
+#define VERSION_CODE(a,b,c) (((a) << 16) + ((b) << 8) + (c))
+
+#endif
+
 errcode_t online_resize_fs(ext2_filsys fs, const char *mtpt,
 			   blk64_t *new_size, int flags EXT2FS_ATTR((unused)))
 {
@@ -36,6 +63,26 @@ errcode_t online_resize_fs(ext2_filsys fs, const char *mtpt,
 	blk_t			size;
 	int			fd, overhead;
 	int			use_old_ioctl = 1;
+	int			no_meta_bg_resize = 0;
+	int			no_resize_ioctl = 0;
+
+	if (getenv("RESIZE2FS_KERNEL_VERSION")) {
+		char *version_to_emulate = getenv("RESIZE2FS_KERNEL_VERSION");
+		int kvers = parse_version_number(version_to_emulate);
+
+		if (kvers < VERSION_CODE(3, 7, 0))
+			no_meta_bg_resize = 1;
+		if (kvers < VERSION_CODE(3, 3, 0))
+			no_resize_ioctl = 1;
+	}
+
+	if (EXT2_HAS_COMPAT_FEATURE(fs->super,
+				    EXT4_FEATURE_COMPAT_SPARSE_SUPER2) &&
+	    (access("/sys/fs/ext4/features/sparse_super2", R_OK) != 0)) {
+		com_err(program_name, 0, _("kernel does not support online "
+					   "resize with sparse_super2"));
+		exit(1);
+	}
 
 	printf(_("Filesystem at %s is mounted on %s; "
 		 "on-line resizing required\n"), fs->device_name, mtpt);
@@ -61,7 +108,7 @@ errcode_t online_resize_fs(ext2_filsys fs, const char *mtpt,
 	 * Do error checking to make sure the resize will be successful.
 	 */
 	if ((access("/sys/fs/ext4/features/meta_bg_resize", R_OK) != 0) ||
-	    getenv("RESIZE2FS_NO_META_BG_RESIZE")) {
+	    no_meta_bg_resize) {
 		if (!EXT2_HAS_COMPAT_FEATURE(fs->super,
 					EXT2_FEATURE_COMPAT_RESIZE_INODE) &&
 		    (new_desc_blocks != fs->desc_blocks)) {
@@ -94,7 +141,9 @@ errcode_t online_resize_fs(ext2_filsys fs, const char *mtpt,
 		exit(1);
 	}
 
-	if (ioctl(fd, EXT4_IOC_RESIZE_FS, new_size)) {
+	if (no_resize_ioctl) {
+		printf(_("Old resize interface requested.\n"));
+	} else if (ioctl(fd, EXT4_IOC_RESIZE_FS, new_size)) {
 		/*
 		 * If kernel does not support EXT4_IOC_RESIZE_FS, use the
 		 * old online resize. Note that the old approach does not
@@ -143,12 +192,16 @@ errcode_t online_resize_fs(ext2_filsys fs, const char *mtpt,
 		ext2fs_blocks_count(sb);
 
 	retval = ext2fs_read_bitmaps(fs);
-	if (retval)
+	if (retval) {
+		close(fd);
 		return retval;
+	}
 
 	retval = ext2fs_dup_handle(fs, &new_fs);
-	if (retval)
+	if (retval) {
+		close(fd);
 		return retval;
+	}
 
 	/* The current method of adding one block group at a time to a
 	 * mounted filesystem means it is impossible to accomodate the
@@ -162,8 +215,10 @@ errcode_t online_resize_fs(ext2_filsys fs, const char *mtpt,
 	 */
 	new_fs->super->s_feature_incompat &= ~EXT4_FEATURE_INCOMPAT_FLEX_BG;
 	retval = adjust_fs_info(new_fs, fs, 0, *new_size);
-	if (retval)
+	if (retval) {
+		close(fd);
 		return retval;
+	}
 
 	printf(_("Performing an on-line resize of %s to %llu (%dk) blocks.\n"),
 	       fs->device_name, *new_size, fs->blocksize / 1024);

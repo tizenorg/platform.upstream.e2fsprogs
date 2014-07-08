@@ -197,7 +197,7 @@ static void safe_print(FILE *f, const char *cp, int len)
 static void print_pathname(FILE *f, ext2_filsys fs, ext2_ino_t dir,
 			   ext2_ino_t ino)
 {
-	errcode_t	retval;
+	errcode_t	retval = 0;
 	char		*path;
 
 	if (!dir && (ino < num_special_inodes)) {
@@ -226,7 +226,8 @@ static void print_time(FILE *f, time_t t)
 			time_str = getenv("TZ");
 			if (!time_str)
 				time_str = "";
-			do_gmt = !strcmp(time_str, "GMT0");
+			do_gmt = !strcmp(time_str, "GMT") ||
+				!strcmp(time_str, "GMT0");
 		}
 #endif
 		time_str = asctime((do_gmt > 0) ? gmtime(&t) : localtime(&t));
@@ -361,8 +362,7 @@ static _INLINE_ void expand_dirent_expression(FILE *f, ext2_filsys fs, char ch,
 					      struct problem_context *ctx)
 {
 	struct ext2_dir_entry	*dirent;
-	unsigned int rec_len;
-	int	len;
+	unsigned int rec_len, len;
 
 	if (!ctx || !ctx->dirent)
 		goto no_dirent;
@@ -451,7 +451,7 @@ static _INLINE_ void expand_percent_expression(FILE *f, ext2_filsys fs,
 		fprintf(f, "%*u", width, ctx->dir);
 		break;
 	case 'g':
-		fprintf(f, "%*d", width, ctx->group);
+		fprintf(f, "%*u", width, ctx->group);
 		break;
 	case 'i':
 		fprintf(f, "%*u", width, ctx->ino);
@@ -490,7 +490,7 @@ static _INLINE_ void expand_percent_expression(FILE *f, ext2_filsys fs,
 #endif
 		break;
 	case 'S':
-		fprintf(f, "%u", get_backup_sb(NULL, fs, NULL, NULL));
+		fprintf(f, "%llu", get_backup_sb(NULL, fs, NULL, NULL));
 		break;
 	case 's':
 		fprintf(f, "%*s", width, ctx->str ? ctx->str : "NULL");

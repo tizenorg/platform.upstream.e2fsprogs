@@ -4,8 +4,8 @@
  * Copyright (C) 2011 Whamcloud, Inc.
  *
  * %Begin-Header%
- * This file may be redistributed under the terms of the GNU Public
- * License.
+ * This file may be redistributed under the terms of the GNU Library
+ * General Public License, version 2.
  * %End-Header%
  */
 
@@ -37,7 +37,7 @@ errcode_t ext2fs_mmp_read(ext2_filsys fs, blk64_t mmp_blk, void *buf)
 	errcode_t retval = 0;
 
 	if ((mmp_blk <= fs->super->s_first_data_block) ||
-	    (mmp_blk >= fs->super->s_blocks_count))
+	    (mmp_blk >= ext2fs_blocks_count(fs->super)))
 		return EXT2_ET_MMP_BAD_BLOCK;
 
 	/* ext2fs_open() reserves fd0,1,2 to avoid stdio collision, so checking
@@ -62,7 +62,8 @@ errcode_t ext2fs_mmp_read(ext2_filsys fs, blk64_t mmp_blk, void *buf)
 			return retval;
 	}
 
-	if (ext2fs_llseek(fs->mmp_fd, mmp_blk * fs->blocksize, SEEK_SET) !=
+	if ((blk64_t) ext2fs_llseek(fs->mmp_fd, mmp_blk * fs->blocksize,
+				    SEEK_SET) !=
 	    mmp_blk * fs->blocksize) {
 		retval = EXT2_ET_LLSEEK_FAILED;
 		goto out;
@@ -126,7 +127,7 @@ errcode_t ext2fs_mmp_write(ext2_filsys fs, blk64_t mmp_blk, void *buf)
 #define rand()		random()
 #endif
 
-unsigned ext2fs_mmp_new_seq()
+unsigned ext2fs_mmp_new_seq(void)
 {
 	unsigned new_seq;
 	struct timeval tv;
