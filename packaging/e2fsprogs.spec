@@ -3,7 +3,7 @@ BuildRequires:  autoconf
 BuildRequires:  libblkid-devel
 BuildRequires:  libuuid-devel
 BuildRequires:  pkg-config
-Version:        1.42.6
+Version:        1.42.11
 Release:        0
 Summary:        Utilities for the Second Extended File System
 License:        GPL-2.0
@@ -24,7 +24,7 @@ mklost+found, tune2fs, e2fsck, resize2fs, and badblocks.
 %package devel
 Summary:        Dummy development package
 License:        LGPL-2.0
-Group:          Development/Libraries/C and C++
+Group:          Base/Development
 Requires:       libblkid-devel
 Requires:       libext2fs-devel = %version
 Requires:       libuuid-devel
@@ -35,7 +35,7 @@ Dummy development package for backwards compatibility.
 %package -n libext2fs
 Summary:        Ext2fs library
 License:        LGPL-2.0
-Group:          System/Filesystems
+Group:          Base/File Systems
 
 %description -n libext2fs
 The basic Ext2fs shared library.
@@ -43,7 +43,7 @@ The basic Ext2fs shared library.
 %package -n libext2fs-devel
 Summary:        Development files for libext2fs
 License:        LGPL-2.0
-Group:          Development/Libraries/C and C++
+Group:          Base/Development
 Requires:       libcom_err-devel
 Requires:       libext2fs = %version
 
@@ -53,7 +53,7 @@ Development files for libext2fs.
 %package -n libcom_err
 Summary:        E2fsprogs error reporting library
 License:        MIT
-Group:          System/Filesystems
+Group:          Base/File Systems
 
 %description -n libcom_err
 com_err is an error message display library.
@@ -61,7 +61,7 @@ com_err is an error message display library.
 %package -n libcom_err-devel
 Summary:        Development files for libcom_err
 License:        MIT
-Group:          Development/Libraries/C and C++
+Group:          Base/Development
 Requires:       glibc-devel
 Requires:       libcom_err = %version
 
