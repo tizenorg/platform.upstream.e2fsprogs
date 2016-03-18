@@ -7,7 +7,7 @@ Summary: Utilities for managing ext2/ext3/ext4 filesystems
 Name: e2fsprogs
 Version: 1.42.11
 Release: 0
-License: GPLv2
+License: GPL-2.0
 Group: System Environment/Base
 Source:  ftp://download.sourceforge.net/pub/sourceforge/e2fsprogs/e2fsprogs-%{version}.tar.gz
 Url: http://e2fsprogs.sourceforge.net/
@@ -49,7 +49,7 @@ e2fsprogs-devel, you'll also want to install e2fsprogs.
 %package -n uuidd
 Summary: helper daemon to guarantee uniqueness of time-based UUIDs
 Group: System Environment/Daemons
-License: GPLv2
+License: BSD-2.0
 Requires: e2fsprogs = %{version}
 Requires(pre): shadow-utils
 
