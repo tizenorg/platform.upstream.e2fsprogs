@@ -21,7 +21,7 @@
 typedef unsigned int tid_t;
 typedef struct journal_s journal_t;
 
-struct buffer_head;
+struct __attribute__ ((visibility ("default"))) buffer_head;
 struct inode;
 
 struct journal_s

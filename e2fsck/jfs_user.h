@@ -14,7 +14,7 @@
  */
 #include "e2fsck.h"
 
-struct buffer_head {
+struct __attribute__ ((visibility ("default"))) buffer_head {
 	e2fsck_t	b_ctx;
 	io_channel 	b_io;
 	int	 	b_size;

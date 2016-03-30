@@ -14,8 +14,8 @@ typedef __u32 problem_t;
 struct problem_context {
 	errcode_t	errcode;
 	ext2_ino_t ino, ino2, dir;
-	struct ext2_inode *inode;
-	struct ext2_dir_entry *dirent;
+	struct __attribute__ ((visibility ("default"))) ext2_inode *inode;
+	struct __attribute__ ((visibility ("default"))) ext2_dir_entry *dirent;
 	blk64_t	blk, blk2;
 	e2_blkcnt_t	blkcount;
 	dgrp_t		group;

@@ -48,7 +48,7 @@ struct blkid_magic {
  * already identified the content type before we get this far.  It may still
  * be useful if there are probe functions which handle multiple content types.
  */
-struct ext2_super_block {
+struct __attribute__ ((visibility ("default"))) ext2_super_block {
 	__u32		s_inodes_count;
 	__u32		s_blocks_count;
 	__u32		s_r_blocks_count;

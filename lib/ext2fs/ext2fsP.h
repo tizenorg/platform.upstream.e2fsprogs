@@ -16,7 +16,7 @@
 /*
  * Badblocks list
  */
-struct ext2_struct_u32_list {
+struct __attribute__ ((visibility ("default"))) ext2_struct_u32_list {
 	int	magic;
 	int	num;
 	int	size;
@@ -24,7 +24,7 @@ struct ext2_struct_u32_list {
 	int	badblocks_flags;
 };
 
-struct ext2_struct_u32_iterate {
+struct __attribute__ ((visibility ("default"))) ext2_struct_u32_iterate {
 	int			magic;
 	ext2_u32_list		bb;
 	int			ptr;
@@ -34,7 +34,7 @@ struct ext2_struct_u32_iterate {
 /*
  * Directory block iterator definition
  */
-struct ext2_struct_dblist {
+struct __attribute__ ((visibility ("default"))) ext2_struct_dblist {
 	int			magic;
 	ext2_filsys		fs;
 	unsigned long long	size;
@@ -64,7 +64,7 @@ struct dir_context {
 /*
  * Inode cache structure
  */
-struct ext2_inode_cache {
+struct __attribute__ ((visibility ("default"))) ext2_inode_cache {
 	void *				buffer;
 	blk64_t				buffer_blk;
 	int				cache_last;
@@ -109,33 +109,33 @@ extern void ext2fs_numeric_progress_close(ext2_filsys fs,
  * 64-bit bitmap support
  */
 
-extern errcode_t ext2fs_alloc_generic_bmap(ext2_filsys fs, errcode_t magic,
+__attribute__ ((visibility ("default"))) extern errcode_t ext2fs_alloc_generic_bmap(ext2_filsys fs, errcode_t magic,
 					   int type, __u64 start, __u64 end,
 					   __u64 real_end,
 					   const char * description,
 					   ext2fs_generic_bitmap *bmap);
 
-extern void ext2fs_free_generic_bmap(ext2fs_generic_bitmap bmap);
+__attribute__ ((visibility ("default"))) extern void ext2fs_free_generic_bmap(ext2fs_generic_bitmap bmap);
 
-extern errcode_t ext2fs_copy_generic_bmap(ext2fs_generic_bitmap src,
+__attribute__ ((visibility ("default"))) extern errcode_t ext2fs_copy_generic_bmap(ext2fs_generic_bitmap src,
 					  ext2fs_generic_bitmap *dest);
 
-extern errcode_t ext2fs_resize_generic_bmap(ext2fs_generic_bitmap bmap,
+__attribute__ ((visibility ("default"))) extern errcode_t ext2fs_resize_generic_bmap(ext2fs_generic_bitmap bmap,
 					    __u64 new_end,
 					    __u64 new_real_end);
-extern errcode_t ext2fs_fudge_generic_bmap_end(ext2fs_generic_bitmap bitmap,
+__attribute__ ((visibility ("default"))) extern errcode_t ext2fs_fudge_generic_bmap_end(ext2fs_generic_bitmap bitmap,
 					       errcode_t neq,
 					       __u64 end, __u64 *oend);
-extern int ext2fs_mark_generic_bmap(ext2fs_generic_bitmap bitmap,
+__attribute__ ((visibility ("default"))) extern int ext2fs_mark_generic_bmap(ext2fs_generic_bitmap bitmap,
 				    __u64 arg);
-extern int ext2fs_unmark_generic_bmap(ext2fs_generic_bitmap bitmap,
+__attribute__ ((visibility ("default"))) extern int ext2fs_unmark_generic_bmap(ext2fs_generic_bitmap bitmap,
 				      __u64 arg);
-extern int ext2fs_test_generic_bmap(ext2fs_generic_bitmap bitmap,
+__attribute__ ((visibility ("default"))) extern int ext2fs_test_generic_bmap(ext2fs_generic_bitmap bitmap,
 				    __u64 arg);
-extern errcode_t ext2fs_set_generic_bmap_range(ext2fs_generic_bitmap bitmap,
+__attribute__ ((visibility ("default"))) extern errcode_t ext2fs_set_generic_bmap_range(ext2fs_generic_bitmap bitmap,
 					       __u64 start, unsigned int num,
 					       void *in);
-extern errcode_t ext2fs_get_generic_bmap_range(ext2fs_generic_bitmap bitmap,
+__attribute__ ((visibility ("default"))) extern errcode_t ext2fs_get_generic_bmap_range(ext2fs_generic_bitmap bitmap,
 					       __u64 start, unsigned int num,
 					       void *out);
 extern void ext2fs_warn_bitmap32(ext2fs_generic_bitmap bitmap,const char *func);

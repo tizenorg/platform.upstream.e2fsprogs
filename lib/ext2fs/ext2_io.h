@@ -22,11 +22,11 @@ typedef long		ext2_loff_t;
 #endif
 
 /* llseek.c */
-ext2_loff_t ext2fs_llseek (int, ext2_loff_t, int);
+__attribute__ ((visibility ("default"))) ext2_loff_t ext2fs_llseek (int, ext2_loff_t, int);
 
-typedef struct struct_io_manager *io_manager;
-typedef struct struct_io_channel *io_channel;
-typedef struct struct_io_stats *io_stats;
+typedef struct __attribute__ ((visibility ("default"))) struct_io_manager *io_manager;
+typedef struct __attribute__ ((visibility ("default"))) struct_io_channel *io_channel;
+typedef struct __attribute__ ((visibility ("default"))) struct_io_stats *io_stats;
 
 #define CHANNEL_FLAGS_WRITETHROUGH	0x01
 #define CHANNEL_FLAGS_DISCARD_ZEROES	0x02
@@ -34,7 +34,7 @@ typedef struct struct_io_stats *io_stats;
 
 #define io_channel_discard_zeroes_data(i) (i->flags & CHANNEL_FLAGS_DISCARD_ZEROES)
 
-struct struct_io_channel {
+struct __attribute__ ((visibility ("default"))) struct_io_channel {
 	errcode_t	magic;
 	io_manager	manager;
 	char		*name;
@@ -61,14 +61,14 @@ struct struct_io_channel {
 	int		align;
 };
 
-struct struct_io_stats {
+struct __attribute__ ((visibility ("default"))) struct_io_stats {
 	int			num_fields;
 	int			reserved;
 	unsigned long long	bytes_read;
 	unsigned long long	bytes_written;
 };
 
-struct struct_io_manager {
+struct __attribute__ ((visibility ("default"))) struct_io_manager {
 	errcode_t magic;
 	const char *name;
 	errcode_t (*open)(const char *name, int flags, io_channel *channel);
@@ -108,42 +108,42 @@ struct struct_io_manager {
 #define io_channel_bumpcount(c)		((c)->refcount++)
 
 /* io_manager.c */
-extern errcode_t io_channel_set_options(io_channel channel,
+__attribute__ ((visibility ("default"))) extern errcode_t io_channel_set_options(io_channel channel,
 					const char *options);
-extern errcode_t io_channel_write_byte(io_channel channel,
+__attribute__ ((visibility ("default"))) extern errcode_t io_channel_write_byte(io_channel channel,
 				       unsigned long offset,
 				       int count, const void *data);
-extern errcode_t io_channel_read_blk64(io_channel channel,
+__attribute__ ((visibility ("default"))) extern errcode_t io_channel_read_blk64(io_channel channel,
 				       unsigned long long block,
 				       int count, void *data);
-extern errcode_t io_channel_write_blk64(io_channel channel,
+__attribute__ ((visibility ("default"))) extern errcode_t io_channel_write_blk64(io_channel channel,
 					unsigned long long block,
 					int count, const void *data);
-extern errcode_t io_channel_discard(io_channel channel,
+__attribute__ ((visibility ("default"))) extern errcode_t io_channel_discard(io_channel channel,
 				    unsigned long long block,
 				    unsigned long long count);
-extern errcode_t io_channel_alloc_buf(io_channel channel,
+__attribute__ ((visibility ("default"))) extern errcode_t io_channel_alloc_buf(io_channel channel,
 				      int count, void *ptr);
 
 /* unix_io.c */
-extern io_manager unix_io_manager;
+__attribute__ ((visibility ("default"))) extern io_manager unix_io_manager;
 
 /* undo_io.c */
-extern io_manager undo_io_manager;
-extern errcode_t set_undo_io_backing_manager(io_manager manager);
-extern errcode_t set_undo_io_backup_file(char *file_name);
+__attribute__ ((visibility ("default"))) extern io_manager undo_io_manager;
+__attribute__ ((visibility ("default"))) extern errcode_t set_undo_io_backing_manager(io_manager manager);
+__attribute__ ((visibility ("default"))) extern errcode_t set_undo_io_backup_file(char *file_name);
 
 /* test_io.c */
-extern io_manager test_io_manager, test_io_backing_manager;
-extern void (*test_io_cb_read_blk)
+__attribute__ ((visibility ("default"))) __attribute__ ((visibility ("default"))) extern io_manager test_io_manager, test_io_backing_manager;
+__attribute__ ((visibility ("default"))) extern void (*test_io_cb_read_blk)
 	(unsigned long block, int count, errcode_t err);
-extern void (*test_io_cb_write_blk)
+__attribute__ ((visibility ("default"))) extern void (*test_io_cb_write_blk)
 	(unsigned long block, int count, errcode_t err);
-extern void (*test_io_cb_read_blk64)
+__attribute__ ((visibility ("default"))) extern void (*test_io_cb_read_blk64)
 	(unsigned long long block, int count, errcode_t err);
-extern void (*test_io_cb_write_blk64)
+__attribute__ ((visibility ("default"))) extern void (*test_io_cb_write_blk64)
 	(unsigned long long block, int count, errcode_t err);
-extern void (*test_io_cb_set_blksize)
+__attribute__ ((visibility ("default"))) extern void (*test_io_cb_set_blksize)
 	(int blksize, errcode_t err);
 
 #endif /* _EXT2FS_EXT2_IO_H */

@@ -15,7 +15,7 @@
 /* Maximum number of references to one attribute block */
 #define EXT2_EXT_ATTR_REFCOUNT_MAX	1024
 
-struct ext2_ext_attr_header {
+struct __attribute__ ((visibility ("default"))) ext2_ext_attr_header {
 	__u32	h_magic;	/* magic number for identification */
 	__u32	h_refcount;	/* reference count */
 	__u32	h_blocks;	/* number of disk blocks used */
@@ -23,7 +23,7 @@ struct ext2_ext_attr_header {
 	__u32	h_reserved[4];	/* zero right now */
 };
 
-struct ext2_ext_attr_entry {
+struct __attribute__ ((visibility ("default"))) ext2_ext_attr_entry {
 	__u8	e_name_len;	/* length of name */
 	__u8	e_name_index;	/* attribute name index */
 	__u16	e_value_offs;	/* offset in disk block of value */

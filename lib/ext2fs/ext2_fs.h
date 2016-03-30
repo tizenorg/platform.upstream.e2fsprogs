@@ -124,7 +124,7 @@
 /*
  * ACL structures
  */
-struct ext2_acl_header	/* Header of Access Control Lists */
+struct __attribute__ ((visibility ("default"))) ext2_acl_header	/* Header of Access Control Lists */
 {
 	__u32	aclh_size;
 	__u32	aclh_file_count;
@@ -132,7 +132,7 @@ struct ext2_acl_header	/* Header of Access Control Lists */
 	__u32	aclh_first_acle;
 };
 
-struct ext2_acl_entry	/* Access Control List Entry */
+struct __attribute__ ((visibility ("default"))) ext2_acl_entry	/* Access Control List Entry */
 {
 	__u32	acle_size;
 	__u16	acle_perms;	/* Access permissions */
@@ -146,7 +146,7 @@ struct ext2_acl_entry	/* Access Control List Entry */
 /*
  * Structure of a blocks group descriptor
  */
-struct ext2_group_desc
+struct __attribute__ ((visibility ("default"))) ext2_group_desc
 {
 	__u32	bg_block_bitmap;	/* Blocks bitmap block */
 	__u32	bg_inode_bitmap;	/* Inodes bitmap block */
@@ -165,7 +165,7 @@ struct ext2_group_desc
 /*
  * Structure of a blocks group descriptor
  */
-struct ext4_group_desc
+struct __attribute__ ((visibility ("default"))) ext4_group_desc
 {
 	__u32	bg_block_bitmap;	/* Blocks bitmap block */
 	__u32	bg_inode_bitmap;	/* Inodes bitmap block */
@@ -208,7 +208,7 @@ struct ext4_group_desc
  * zero.  Therefore, the hash version mod 4 should never be 0.
  * Sincerely, the paranoia department.
  */
-struct ext2_dx_root_info {
+struct __attribute__ ((visibility ("default"))) ext2_dx_root_info {
 	__u32 reserved_zero;
 	__u8 hash_version; /* 0 now, 1 at release */
 	__u8 info_length; /* 8 */
@@ -225,12 +225,12 @@ struct ext2_dx_root_info {
 
 #define EXT2_HASH_FLAG_INCOMPAT	0x1
 
-struct ext2_dx_entry {
+struct __attribute__ ((visibility ("default"))) ext2_dx_entry {
 	__u32 hash;
 	__u32 block;
 };
 
-struct ext2_dx_countlimit {
+struct __attribute__ ((visibility ("default"))) ext2_dx_countlimit {
 	__u16 limit;
 	__u16 count;
 };
@@ -315,7 +315,7 @@ struct ext2_dx_countlimit {
  */
 
 /* Used for online resize */
-struct ext2_new_group_input {
+struct __attribute__ ((visibility ("default"))) ext2_new_group_input {
 	__u32 group;		/* Group number for this data */
 	__u32 block_bitmap;	/* Absolute block number of block bitmap */
 	__u32 inode_bitmap;	/* Absolute block number of inode bitmap */
@@ -325,7 +325,7 @@ struct ext2_new_group_input {
 	__u16 unused;		/* Number of reserved GDT blocks in group */
 };
 
-struct ext4_new_group_input {
+struct __attribute__ ((visibility ("default"))) ext4_new_group_input {
 	__u32 group;		/* Group number for this data */
 	__u64 block_bitmap;	/* Absolute block number of block bitmap */
 	__u64 inode_bitmap;	/* Absolute block number of inode bitmap */
@@ -353,7 +353,7 @@ struct ext4_new_group_input {
 /*
  * Structure of an inode on the disk
  */
-struct ext2_inode {
+struct __attribute__ ((visibility ("default"))) ext2_inode {
 	__u16	i_mode;		/* File mode */
 	__u16	i_uid;		/* Low 16 bits of Owner Uid */
 	__u32	i_size;		/* Size in bytes */
@@ -401,7 +401,7 @@ struct ext2_inode {
 /*
  * Permanent part of an large inode on the disk
  */
-struct ext2_inode_large {
+struct __attribute__ ((visibility ("default"))) ext2_inode_large {
 	__u16	i_mode;		/* File mode */
 	__u16	i_uid;		/* Low 16 bits of Owner Uid */
 	__u32	i_size;		/* Size in bytes */
@@ -538,7 +538,7 @@ struct ext2_inode_large {
 /*
  * Structure of the super block
  */
-struct ext2_super_block {
+struct __attribute__ ((visibility ("default"))) ext2_super_block {
 	__u32	s_inodes_count;		/* Inodes count */
 	__u32	s_blocks_count;		/* Blocks count */
 	__u32	s_r_blocks_count;	/* Reserved blocks count */
@@ -764,7 +764,7 @@ struct ext2_super_block {
  */
 #define EXT2_NAME_LEN 255
 
-struct ext2_dir_entry {
+struct __attribute__ ((visibility ("default"))) ext2_dir_entry {
 	__u32	inode;			/* Inode number */
 	__u16	rec_len;		/* Directory entry length */
 	__u16	name_len;		/* Name length */
@@ -777,7 +777,7 @@ struct ext2_dir_entry {
  * bigger than 255 chars, it's safe to reclaim the extra byte for the
  * file_type field.
  */
-struct ext2_dir_entry_2 {
+struct __attribute__ ((visibility ("default"))) ext2_dir_entry_2 {
 	__u32	inode;			/* Inode number */
 	__u16	rec_len;		/* Directory entry length */
 	__u8	name_len;		/* Name length */
@@ -833,7 +833,7 @@ struct ext2_dir_entry_2 {
 #define EXT4_MMP_SEQ_FSCK  0xE24D4D50U /* mmp_seq value when being fscked */
 #define EXT4_MMP_SEQ_MAX   0xE24D4D4FU /* maximum valid mmp_seq value */
 
-struct mmp_struct {
+struct __attribute__ ((visibility ("default"))) mmp_struct {
 	__u32	mmp_magic;		/* Magic number for MMP */
 	__u32	mmp_seq;		/* Sequence no. updated periodically */
 	__u64	mmp_time;		/* Time last updated */

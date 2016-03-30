@@ -73,6 +73,9 @@ Development files for the com_err error message display library.
 cp %{SOURCE1001} .
 
 %build
+export CFLAGS+=" -fvisibility=hidden"
+  export CXXFLAGS+=" -fvisibility=hidden"
+  
 %configure \
   --disable-evms \
   --with-root-prefix=''   \
@@ -88,6 +91,9 @@ make %{?_smp_mflags} V=1
 %install
 make install install-libs DESTDIR=$RPM_BUILD_ROOT ELF_INSTALL_DIR=/%{_libdir}
 find "%buildroot/%_libdir" -type f -name "*.a" \
+export CFLAGS+=" -fvisibility=hidden"
+  export CXXFLAGS+=" -fvisibility=hidden"
+  
        -print -delete
 # Let boot continue even if system clock is wrong
 install -p -m 644 %{SOURCE2} %{buildroot}/etc/e2fsck.conf
