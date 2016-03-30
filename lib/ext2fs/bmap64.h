@@ -37,7 +37,7 @@ struct ext2_bmap_statistics {
 };
 
 
-struct ext2fs_struct_generic_bitmap {
+struct __attribute__ ((visibility ("default"))) ext2fs_struct_generic_bitmap {
 	errcode_t		magic;
 	ext2_filsys 		fs;
 	struct ext2_bitmap_ops	*bitmap_ops;

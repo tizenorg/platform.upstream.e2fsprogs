@@ -82,14 +82,14 @@ typedef struct _ss_data {	/* init values */
      (*code_ptr=0,ss_info(sci_idx)->current_request)
 void ss_add_info_dir (int sci_idx, char *info_dir, int *code_ptr);
 void ss_delete_info_dir (int sci_idx, char *info_dir, int *code_ptr);
-int ss_execute_line(int sci_idx, char *line_ptr);
+__attribute__ ((visibility ("default"))) int ss_execute_line(int sci_idx, char *line_ptr);
 char **ss_parse(int sci_idx, char *line_ptr, int *argc_ptr);
 ss_abbrev_info *ss_abbrev_initialize(char *, int *);
 void ss_page_stdin(void);
 void ss_list_requests(int, char const * const *, int, pointer);
 int ss_execute_command(int sci_idx, char *argv[]);
 int ss_pager_create(void);
-char *ss_safe_getenv(const char *arg);
+__attribute__ ((visibility ("default"))) char *ss_safe_getenv(const char *arg);
 char **ss_rl_completion(const char *text, int start, int end);
 
 extern ss_data **_ss_table;

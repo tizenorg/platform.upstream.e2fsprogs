@@ -14,9 +14,9 @@
 
 #ifndef _ET_H
 
-struct et_list {
+struct __attribute__ ((visibility ("default"))) et_list {
     struct et_list *next;
-    const struct error_table *table;
+    const struct __attribute__ ((visibility ("default"))) error_table *table;
 };
 extern struct et_list *_et_list, *_et_dynamic_list;
 
