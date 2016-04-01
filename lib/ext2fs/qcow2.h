@@ -108,6 +108,6 @@ struct ext2_qcow2_image {
 /* qcow2.c */
 
 /* Functions for converting qcow2 image into raw image */
-struct ext2_qcow2_hdr *qcow2_read_header(int);
-int qcow2_write_raw_image(int, int, struct ext2_qcow2_hdr *);
+__attribute__ ((visibility ("default"))) struct ext2_qcow2_hdr *qcow2_read_header(int);
+__attribute__ ((visibility ("default"))) int qcow2_write_raw_image(int, int, struct ext2_qcow2_hdr *);
 

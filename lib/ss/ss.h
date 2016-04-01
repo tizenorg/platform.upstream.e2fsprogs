@@ -61,36 +61,36 @@ typedef struct _ss_rp_options {	/* DEFAULT VALUES */
 #define SS_OPT_DONT_LIST	0x0001
 #define SS_OPT_DONT_SUMMARIZE	0x0002
 
-void ss_help __SS_PROTO;
+__attribute__ ((visibility ("default"))) void ss_help __SS_PROTO;
 #if 0
 char *ss_current_request();	/* This is actually a macro */
 #endif
 
-char *ss_name(int sci_idx);
-void ss_error (int, long, char const *, ...)
+__attribute__ ((visibility ("default"))) char *ss_name(int sci_idx);
+__attribute__ ((visibility ("default"))) void ss_error (int, long, char const *, ...)
 	__SS_ATTR((format(printf, 3, 4)));
-void ss_perror (int, long, char const *);
+__attribute__ ((visibility ("default"))) void ss_perror (int, long, char const *);
 
-int ss_create_invocation(const char *, const char *, void *,
+__attribute__ ((visibility ("default"))) int ss_create_invocation(const char *, const char *, void *,
 			 ss_request_table *, int *);
-void ss_delete_invocation(int);
-int ss_listen(int);
-int ss_execute_line(int, char *);
-void ss_add_request_table(int, ss_request_table *, int, int *);
-void ss_delete_request_table(int, ss_request_table *, int *);
-void ss_abort_subsystem(int sci_idx, int code);
-void ss_quit(int argc, const char * const *argv, int sci_idx, void *infop);
-void ss_self_identify(int argc, const char * const *argv, int sci_idx, void *infop);
-void ss_subsystem_name(int argc, const char * const *argv,
+__attribute__ ((visibility ("default"))) void ss_delete_invocation(int);
+__attribute__ ((visibility ("default"))) int ss_listen(int);
+__attribute__ ((visibility ("default"))) int ss_execute_line(int, char *);
+__attribute__ ((visibility ("default"))) void ss_add_request_table(int, ss_request_table *, int, int *);
+__attribute__ ((visibility ("default"))) void ss_delete_request_table(int, ss_request_table *, int *);
+__attribute__ ((visibility ("default"))) void ss_abort_subsystem(int sci_idx, int code);
+__attribute__ ((visibility ("default"))) void ss_quit(int argc, const char * const *argv, int sci_idx, void *infop);
+__attribute__ ((visibility ("default"))) void ss_self_identify(int argc, const char * const *argv, int sci_idx, void *infop);
+__attribute__ ((visibility ("default"))) void ss_subsystem_name(int argc, const char * const *argv,
 		       int sci_idx, void *infop);
-void ss_subsystem_version(int argc, const char * const *argv,
+__attribute__ ((visibility ("default"))) void ss_subsystem_version(int argc, const char * const *argv,
 			  int sci_idx, void *infop);
-void ss_unimplemented(int argc, const char * const *argv,
+__attribute__ ((visibility ("default"))) void ss_unimplemented(int argc, const char * const *argv,
 		      int sci_idx, void *infop);
-void ss_set_prompt(int sci_idx, char *new_prompt);
-char *ss_get_prompt(int sci_idx);
-void ss_get_readline(int sci_idx);
-char *ss_safe_getenv(const char *arg);
+__attribute__ ((visibility ("default"))) void ss_set_prompt(int sci_idx, char *new_prompt);
+__attribute__ ((visibility ("default"))) char *ss_get_prompt(int sci_idx);
+__attribute__ ((visibility ("default"))) void ss_get_readline(int sci_idx);
+__attribute__ ((visibility ("default"))) char *ss_safe_getenv(const char *arg);
 
-extern ss_request_table ss_std_requests;
+__attribute__ ((visibility ("default"))) extern ss_request_table ss_std_requests;
 #endif /* _ss_h */
