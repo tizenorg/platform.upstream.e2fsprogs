@@ -85,7 +85,7 @@ export CFLAGS+=" -fvisibility=hidden"
   --disable-uuidd \
   --disable-nls \
   --disable-fsck \
-  CFLAGS="$RPM_OPT_FLAGS"
+  CFLAGS="$RPM_OPT_FLAGS -fvisibility=hidden"
 make %{?_smp_mflags} V=1
 
 %install
