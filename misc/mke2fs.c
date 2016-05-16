@@ -27,7 +27,7 @@
 #include <time.h>
 #ifdef __linux__
 #include <sys/utsname.h>
-#include <linux/version.h>
+#define KERNEL_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))
 #endif
 #ifdef HAVE_GETOPT_H
 #include <getopt.h>
@@ -1796,6 +1796,8 @@ profile_error:
 		flags |= CHECK_FS_EXIST;
 	if (!quiet)
 		flags |= VERBOSE_CREATE;
+	if (fs_blocks_count == 0)
+		flags |= NO_SIZE;
 	if (!check_plausibility(device_name, flags, &is_device) && !force)
 		proceed_question(proceed_delay);
 
@@ -1871,7 +1873,7 @@ profile_error:
 	tmp = NULL;
 	if (fs_param.s_rev_level != EXT2_GOOD_OLD_REV) {
 		tmp = get_string_from_profile(fs_types, "base_features",
-		      "sparse_super,filetype,resize_inode,dir_index");
+		      "sparse_super,large_file,filetype,resize_inode,dir_index");
 		edit_feature(tmp, &fs_param.s_feature_compat);
 		free(tmp);
 
