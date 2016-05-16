@@ -19,6 +19,7 @@ INSTALL = @INSTALL@
 
 @UUIDD_CMT@UUIDD_PROG= uuidd
 @UUIDD_CMT@UUIDD_MAN= uuidd.8
+@UUIDD_CMT@UUIDD_PROFILED= uuidd.profiled
 
 @BLKID_CMT@BLKID_PROG= blkid
 @BLKID_CMT@BLKID_MAN= blkid.8
@@ -62,7 +63,8 @@ PROFILED_TUNE2FS_OBJS=	profiled/tune2fs.o profiled/util.o
 PROFILED_MKLPF_OBJS=	profiled/mklost+found.o
 PROFILED_MKE2FS_OBJS=	profiled/mke2fs.o profiled/util.o profiled/profile.o \
 			profiled/prof_err.o profiled/default_profile.o \
-			profiled/create_inode.o
+			profiled/create_inode.o \
+			profiled/mk_hugefiles.o 
 PROFILED_CHATTR_OBJS=	profiled/chattr.o
 PROFILED_LSATTR_OBJS=	profiled/lsattr.o
 PROFILED_UUIDGEN_OBJS=	profiled/uuidgen.o
@@ -110,7 +112,7 @@ all:: profiled $(SPROGS) $(UPROGS) $(USPROGS) $(SMANPAGES) $(UMANPAGES) \
 
 @PROFILE_CMT@all:: tune2fs.profiled blkid.profiled e2image.profiled \
 	e2undo.profiled mke2fs.profiled dumpe2fs.profiled fsck.profiled \
-	logsave.profiled filefrag.profiled uuidgen.profiled uuidd.profiled \
+	logsave.profiled filefrag.profiled uuidgen.profiled $(UUIDD_PROFILED) \
 	e2image.profiled e4defrag.profiled e2freefrag.profiled
 
 profiled:

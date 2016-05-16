@@ -522,7 +522,6 @@ static void internal_dump_inode_extra(FILE *out,
 	struct ext2_ext_attr_entry *entry;
 	__u32 *magic;
 	char *start, *end;
-	unsigned int storage_size;
 
 	fprintf(out, "Size of extra inode fields: %u\n", inode->i_extra_isize);
 	if (inode->i_extra_isize > EXT2_INODE_SIZE(current_fs->super) -
@@ -531,9 +530,6 @@ static void internal_dump_inode_extra(FILE *out,
 				inode->i_extra_isize);
 		return;
 	}
-	storage_size = EXT2_INODE_SIZE(current_fs->super) -
-			EXT2_GOOD_OLD_INODE_SIZE -
-			inode->i_extra_isize;
 	magic = (__u32 *)((char *)inode + EXT2_GOOD_OLD_INODE_SIZE +
 			inode->i_extra_isize);
 	if (*magic == EXT2_EXT_ATTR_MAGIC) {
@@ -544,17 +540,19 @@ static void internal_dump_inode_extra(FILE *out,
 		while (!EXT2_EXT_IS_LAST_ENTRY(entry)) {
 			struct ext2_ext_attr_entry *next =
 				EXT2_EXT_ATTR_NEXT(entry);
-			if (entry->e_value_size > storage_size ||
-					(char *) next >= end) {
+			char *name = EXT2_EXT_ATTR_NAME(entry);
+			char *value = start + entry->e_value_offs;
+
+			if (name + entry->e_name_len >= end ||
+			    value + entry->e_value_size >= end ||
+			    (char *) next >= end) {
 				fprintf(out, "invalid EA entry in inode\n");
 				return;
 			}
 			fprintf(out, "  ");
-			dump_xattr_string(out, EXT2_EXT_ATTR_NAME(entry),
-					  entry->e_name_len);
+			dump_xattr_string(out, name, entry->e_name_len);
 			fprintf(out, " = \"");
-			dump_xattr_string(out, start + entry->e_value_offs,
-						entry->e_value_size);
+			dump_xattr_string(out, value, entry->e_value_size);
 			fprintf(out, "\" (%u)\n", entry->e_value_size);
 			entry = next;
 		}
@@ -1903,6 +1901,39 @@ void do_imap(int argc, char *argv[])
 
 }
 
+void do_idump(int argc, char *argv[])
+{
+	ext2_ino_t	ino;
+	unsigned char	*buf;
+	errcode_t	err;
+	int		isize;
+
+	if (common_args_process(argc, argv, 2, 2, argv[0],
+				"<file>", 0))
+		return;
+	ino = string_to_inode(argv[1]);
+	if (!ino)
+		return;
+
+	isize = EXT2_INODE_SIZE(current_fs->super);
+	err = ext2fs_get_mem(isize, &buf);
+	if (err) {
+		com_err(argv[0], err, "while allocating memory");
+		return;
+	}
+
+	err = ext2fs_read_inode_full(current_fs, ino,
+				     (struct ext2_inode *)buf, isize);
+	if (err) {
+		com_err(argv[0], err, "while reading inode %d", ino);
+		goto err;
+	}
+
+	do_byte_hexdump(stdout, buf, isize);
+err:
+	ext2fs_free_mem(&buf);
+}
+
 #ifndef READ_ONLY
 void do_set_current_time(int argc, char *argv[])
 {
@@ -2042,15 +2073,12 @@ void do_symlink(int argc, char *argv[])
 
 void do_dump_mmp(int argc EXT2FS_ATTR((unused)), char *argv[])
 {
-	struct ext2_super_block *sb;
 	struct mmp_struct *mmp_s;
 	time_t t;
 	errcode_t retval = 0;
 
 	if (check_fs_open(argv[0]))
 		return;
-
-	sb  = current_fs->super;
 
 	if (current_fs->mmp_buf == NULL) {
 		retval = ext2fs_get_mem(current_fs->blocksize,
