@@ -3,7 +3,7 @@ BuildRequires:  autoconf
 BuildRequires:  libblkid-devel
 BuildRequires:  libuuid-devel
 BuildRequires:  pkg-config
-Version:        1.42.11
+Version:        1.42.13
 Release:        0
 Summary:        Utilities for the Second Extended File System
 License:        GPL-2.0

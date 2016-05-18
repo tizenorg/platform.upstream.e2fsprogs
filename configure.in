@@ -479,6 +479,7 @@ then
 		[LIBUUID=`$PKG_CONFIG --libs uuid`;
 		 STATIC_LIBUUID=`$PKG_CONFIG --static --libs uuid`],
 		[AC_MSG_ERROR([external uuid library not found])])
+	PROFILED_LIBUUID=$LIBUUID
 	UUID_CMT=#
 	AC_MSG_RESULT([Disabling private uuid library])
 else
@@ -531,6 +532,7 @@ then
 		 STATIC_LIBBLKID=`$PKG_CONFIG --static --libs blkid`],
 		[AC_MSG_ERROR([external blkid library not found])], -luuid)
 	BLKID_CMT=#
+	PROFILED_LIBBLKID=$LIBBLKID
 	AC_MSG_RESULT([Disabling private blkid library])
 else
 	LIBBLKID='$(LIB)/libblkid'$LIB_EXT
@@ -783,8 +785,14 @@ else
 fi]
 ,
 AC_DEFINE(USE_UUIDD, 1)
-UUIDD_CMT=""
-AC_MSG_RESULT([Building uuidd by default])
+if test -z "$UUID_CMT"
+then
+	UUIDD_CMT=""
+	AC_MSG_RESULT([Building uuidd by default])
+else
+	UUIDD_CMT="#"
+	AC_MSG_RESULT([Disabling uuidd by default])
+fi
 )
 AC_SUBST(UUIDD_CMT)
 dnl
@@ -1059,6 +1067,10 @@ AC_CHECK_FUNCS(m4_flatten([
 	posix_fadvise64
 	posix_memalign
 	prctl
+	pread
+	pwrite
+	pread64
+	pwrite64
 	secure_getenv
 	setmntent
 	setresgid
@@ -1075,6 +1087,7 @@ AC_CHECK_FUNCS(m4_flatten([
 	sysconf
 	usleep
 	utime
+	utimes
 	valloc
 ]))
 dnl
@@ -1302,9 +1315,6 @@ dnl
 if test $cross_compiling = no; then
    BUILD_CFLAGS="$CFLAGS $CPPFLAGS $INCLUDES -DHAVE_CONFIG_H"
    BUILD_LDFLAGS="$LDFLAGS"
-else
-   BUILD_CFLAGS=
-   BUILD_LDFLAGS=
 fi
 AC_SUBST(BUILD_CFLAGS)
 AC_SUBST(BUILD_LDFLAGS)

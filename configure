@@ -5302,6 +5302,7 @@ else
   as_fn_error $? "external uuid library not found" "$LINENO" 5
 fi
 
+	PROFILED_LIBUUID=$LIBUUID
 	UUID_CMT=#
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Disabling private uuid library" >&5
 $as_echo "Disabling private uuid library" >&6; }
@@ -5515,6 +5516,7 @@ else
 fi
 
 	BLKID_CMT=#
+	PROFILED_LIBBLKID=$LIBBLKID
 	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Disabling private blkid library" >&5
 $as_echo "Disabling private blkid library" >&6; }
 else
@@ -5975,9 +5977,16 @@ fi
 else
   $as_echo "#define USE_UUIDD 1" >>confdefs.h
 
-UUIDD_CMT=""
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Building uuidd by default" >&5
+if test -z "$UUID_CMT"
+then
+	UUIDD_CMT=""
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Building uuidd by default" >&5
 $as_echo "Building uuidd by default" >&6; }
+else
+	UUIDD_CMT="#"
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: Disabling uuidd by default" >&5
+$as_echo "Disabling uuidd by default" >&6; }
+fi
 
 fi
 
@@ -12994,7 +13003,7 @@ if test "$ac_res" != no; then :
 fi
 
 fi
-for ac_func in  	__secure_getenv 	backtrace 	blkid_probe_get_topology 	blkid_probe_enable_partitions 	chflags 	fadvise64 	fallocate 	fallocate64 	fchown 	fdatasync 	fstat64 	ftruncate64 	futimes 	getcwd 	getdtablesize 	getmntinfo 	getpwuid_r 	getrlimit 	getrusage 	jrand48 	llseek 	lseek64 	mallinfo 	mbstowcs 	memalign 	mempcpy 	mmap 	msync 	nanosleep 	open64 	pathconf 	posix_fadvise 	posix_fadvise64 	posix_memalign 	prctl 	secure_getenv 	setmntent 	setresgid 	setresuid 	snprintf 	srandom 	stpcpy 	strcasecmp 	strdup 	strnlen 	strptime 	strtoull 	sync_file_range 	sysconf 	usleep 	utime 	valloc
+for ac_func in  	__secure_getenv 	backtrace 	blkid_probe_get_topology 	blkid_probe_enable_partitions 	chflags 	fadvise64 	fallocate 	fallocate64 	fchown 	fdatasync 	fstat64 	ftruncate64 	futimes 	getcwd 	getdtablesize 	getmntinfo 	getpwuid_r 	getrlimit 	getrusage 	jrand48 	llseek 	lseek64 	mallinfo 	mbstowcs 	memalign 	mempcpy 	mmap 	msync 	nanosleep 	open64 	pathconf 	posix_fadvise 	posix_fadvise64 	posix_memalign 	prctl 	pread 	pwrite 	pread64 	pwrite64 	secure_getenv 	setmntent 	setresgid 	setresuid 	snprintf 	srandom 	stpcpy 	strcasecmp 	strdup 	strnlen 	strptime 	strtoull 	sync_file_range 	sysconf 	usleep 	utime 	utimes 	valloc
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -13403,9 +13412,6 @@ fi
 if test $cross_compiling = no; then
    BUILD_CFLAGS="$CFLAGS $CPPFLAGS $INCLUDES -DHAVE_CONFIG_H"
    BUILD_LDFLAGS="$LDFLAGS"
-else
-   BUILD_CFLAGS=
-   BUILD_LDFLAGS=
 fi
 
 
